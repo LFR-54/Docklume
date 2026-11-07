@@ -20,6 +20,11 @@ final class DriveStore {
     @ObservationIgnored private var poller: Task<Void, Never>?
     @ObservationIgnored private var speedTests: [Drive.ID: Task<Void, Never>] = [:]
     @ObservationIgnored private var reconnects: [Drive.ID: Int] = [:]
+    /// The drives waiting to mount again, each with the wait that will do it.
+    @ObservationIgnored private var pendingMounts: [Drive.ID: UUID] = [:]
+    @ObservationIgnored private var network: NetworkWatch?
+    /// The drives whose server is being checked before rclone starts.
+    @ObservationIgnored private var checkingServer: Set<Drive.ID> = []
     @ObservationIgnored private var warnedFull: Set<Drive.ID> = []
     @ObservationIgnored private var warnedDiskFull = false
     @ObservationIgnored private var scannedCaches: [Drive.ID: Int64] = [:]
@@ -104,6 +109,7 @@ final class DriveStore {
             loadError = error.localizedDescription
         }
         watchEjections()
+        network = NetworkWatch { [weak self] in self?.networkChanged() }
         adoptOrphans()
         startPolling()
         for drive in drives where drive.settings.mountAtLogin { mount(drive) }
@@ -184,6 +190,7 @@ final class DriveStore {
     private func show(_ space: Space?, _ error: String?, on drive: Drive) {
         drive.space = space
         drive.spaceError = error.map { RcloneLog.explain($0, provider: drive.provider.id) }
+        drive.serverSilent = error.map(RcloneLog.isNetworkError) ?? false
         warnIfNearlyFull(drive)
     }
 
@@ -212,7 +219,7 @@ final class DriveStore {
     // MARK: Mounting
 
     func mount(_ drive: Drive) {
-        guard let rclone, sessions[drive.id] == nil else { return }
+        guard rclone != nil, sessions[drive.id] == nil, !checkingServer.contains(drive.id) else { return }
         guard drive.settings.method.isAvailable else {
             drive.state = .failed("macFUSE n'est pas installé. Choisissez NFS intégré dans la fiche du lecteur.")
             return
@@ -222,8 +229,41 @@ final class DriveStore {
             return fail(drive, "Un autre montage occupe déjà \(drive.displayPath). Démontez-le, puis réessayez.")
         }
         drive.state = .mounting
-        drive.notice = nil
         ejections[drive.id] = nil
+        checkingServer.insert(drive.id)
+        Task {
+            let answers = await serverAnswers(drive)
+            checkingServer.remove(drive.id)
+            // Unmounting or deleting the drive meanwhile cancels the mount.
+            guard drive.state == .mounting, sessions[drive.id] == nil, drives.contains(where: { $0 === drive }) else { return }
+            if answers {
+                start(drive)
+            } else {
+                await serverSilent(drive)
+            }
+        }
+    }
+
+    /// True when the server answers, or when Docklume cannot tell which server the remote uses.
+    private func serverAnswers(_ drive: Drive) async -> Bool {
+        guard let dump = try? await rclone?.dump(), let endpoint = Reachability.endpoint(of: drive.record.remote, in: dump) else { return true }
+        return await Reachability.answers(endpoint)
+    }
+
+    /// The server does not answer: rclone is not started, and Docklume tries again until it does, at most 30 s
+    /// apart, and at once when macOS reports the network back.
+    private func serverSilent(_ drive: Drive) async {
+        let silent = "\(drive.provider.name) ne répond pas"
+        guard drive.settings.autoReconnect else { return fail(drive, "\(silent). Vérifiez la connexion à Internet, puis réessayez.") }
+        let attempts = reconnects[drive.id, default: 0]
+        reconnects[drive.id] = attempts + 1
+        let delay = min(30, 5 << min(attempts, 3))
+        await mountAgain(drive, after: delay, "\(silent), nouvelle tentative dans \(delay) s…")
+    }
+
+    private func start(_ drive: Drive) {
+        guard let rclone else { return }
+        drive.notice = nil
         do {
             // A mount point left by a process that did not exit cleanly stays busy; a new directory does not.
             removeMountPoint(drive)
@@ -398,10 +438,12 @@ final class DriveStore {
         case .mounting:
             let message = failure()
             let attempts = reconnects[drive.id, default: 0]
-            // rclone gives up at once when it cannot reach the server, which happens at login before the network is up.
-            if drive.settings.autoReconnect, attempts < 5, RcloneLog.isNetworkError(message) {
+            // rclone gives up at once when it cannot reach the server: at login before the network is up, or during
+            // an outage. Docklume tries again until the network is back, at most 30 s apart, and at once when macOS
+            // reports it back.
+            if drive.settings.autoReconnect, RcloneLog.isNetworkError(message) {
                 reconnects[drive.id] = attempts + 1
-                let delay = 5 << attempts
+                let delay = min(30, 5 << min(attempts, 3))
                 await mountAgain(drive, after: delay, "Serveur injoignable, nouvelle tentative dans \(delay) s…")
             } else {
                 reconnects[drive.id] = nil
@@ -423,13 +465,30 @@ final class DriveStore {
         }
     }
 
-    /// Mounts the drive again after `delay` seconds, saying why meanwhile. Unmounting or deleting the drive stops the wait.
+    /// Mounts the drive again after `delay` seconds, saying why meanwhile. Unmounting or deleting the drive stops the
+    /// wait, and the network coming back ends it early.
     private func mountAgain(_ drive: Drive, after delay: Int, _ notice: String) async {
         drive.state = .mounting
         drive.notice = notice
+        let wait = UUID()
+        pendingMounts[drive.id] = wait
         try? await Task.sleep(for: .seconds(delay))
+        guard pendingMounts[drive.id] == wait else { return }
+        pendingMounts[drive.id] = nil
         guard drive.state == .mounting, sessions[drive.id] == nil, drives.contains(where: { $0 === drive }) else { return }
         mount(drive)
+    }
+
+    /// The network came back or changed: the mounted drives drop the connections lost with it, so their reads
+    /// start again at once instead of waiting for them to time out, and the drives waiting to mount again try now.
+    private func networkChanged() {
+        for drive in drives {
+            if let session = sessions[drive.id], drive.isMounted {
+                Task { await session.reconnect() }
+            } else if pendingMounts.removeValue(forKey: drive.id) != nil, drive.state == .mounting, sessions[drive.id] == nil {
+                mount(drive)
+            }
+        }
     }
 
     private func fail(_ drive: Drive, _ message: String) {

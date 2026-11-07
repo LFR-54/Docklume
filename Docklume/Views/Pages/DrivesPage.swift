@@ -116,7 +116,7 @@ struct DriveCard: View {
                 .padding(.top, 1)
             SpaceBar(space: drive.space, height: 5)
                 .padding(.top, 9)
-            SpaceCaption(space: drive.space, unreadable: drive.spaceError != nil)
+            SpaceCaption(space: drive.space, unreadable: drive.spaceError != nil, silent: drive.serverSilent ? drive.provider.name : nil)
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.text2)
                 .lineBox(12)
@@ -165,6 +165,8 @@ struct DriveCard: View {
 struct SpaceCaption: View {
     let space: Space?
     var unreadable = false
+    /// The service whose server did not answer when its space was asked.
+    var silent: String?
 
     var body: some View {
         let level = SpaceLevel(space)
@@ -177,7 +179,7 @@ struct SpaceCaption: View {
                     .monospacedDigit()
             }
         } else {
-            Text(unreadable ? "Espace illisible" : space == nil ? "Espace en cours de lecture…" : "Espace non communiqué par ce service")
+            Text(silent.map { "\($0) ne répond pas" } ?? (unreadable ? "Espace illisible" : space == nil ? "Espace en cours de lecture…" : "Espace non communiqué par ce service"))
         }
     }
 }

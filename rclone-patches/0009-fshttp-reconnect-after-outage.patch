@@ -1,0 +1,343 @@
+diff --git a/fs/fshttp/dialer.go b/fs/fshttp/dialer.go
+index c205ff5..84d092f 100644
+--- a/fs/fshttp/dialer.go
++++ b/fs/fshttp/dialer.go
+@@ -6,6 +6,7 @@ import (
+ 	"runtime"
+ 	"strings"
+ 	"sync"
++	"sync/atomic"
+ 	"time"
+ 
+ 	"github.com/rclone/rclone/fs"
+@@ -27,8 +28,12 @@ func NewDialer(ctx context.Context) *Dialer {
+ 	ci := fs.GetConfig(ctx)
+ 	dialer := &Dialer{
+ 		Dialer: net.Dialer{
+-			Timeout:   time.Duration(ci.ConnectTimeout),
+-			KeepAlive: 30 * time.Second,
++			Timeout: time.Duration(ci.ConnectTimeout),
++			// A peer that goes silent is dropped after 10s of quiet and three
++			// unanswered probes 5s apart, about 25s, instead of the 30s and nine
++			// probes, about 5 minutes, of KeepAlive: 30s. A connection lost in a
++			// network outage then stops holding up the reads waiting on it.
++			KeepAliveConfig: net.KeepAliveConfig{Enable: true, Idle: 10 * time.Second, Interval: 5 * time.Second, Count: 3},
+ 		},
+ 		timeout: time.Duration(ci.Timeout),
+ 		tclass:  int(ci.TrafficClass),
+@@ -61,6 +66,9 @@ func (d *Dialer) DialContext(ctx context.Context, network, address string) (net.
+ 
+ 	c, err := d.Dialer.DialContext(ctx, network, address)
+ 	if err != nil {
++		if ctx.Err() == nil {
++			noteDialFailure(err)
++		}
+ 		return c, err
+ 	}
+ 
+@@ -84,10 +92,8 @@ func (d *Dialer) DialContext(ctx context.Context, network, address string) (net.
+ 		}
+ 	}
+ 
+-	t := &timeoutConn{
+-		Conn:    c,
+-		timeout: d.timeout,
+-	}
++	t := newTimeoutConn(c, d.timeout)
++	noteDialSuccess()
+ 	return t, t.nudgeDeadline()
+ }
+ 
+@@ -95,6 +101,8 @@ func (d *Dialer) DialContext(ctx context.Context, network, address string) (net.
+ type timeoutConn struct {
+ 	net.Conn
+ 	timeout time.Duration
++	// lastActive is when it last carried data, in Unix nanoseconds.
++	lastActive atomic.Int64
+ }
+ 
+ // Nudge the deadline for an idle timeout on by c.timeout if non-zero
+@@ -110,6 +118,9 @@ func (c *timeoutConn) Read(b []byte) (n int, err error) {
+ 	// Ideally we would LimitBandwidth(len(b)) here and replace tokens we didn't use
+ 	n, err = c.Conn.Read(b)
+ 	accounting.TokenBucket.LimitBandwidth(accounting.TokenBucketSlotTransportRx, n)
++	if n > 0 {
++		c.touch()
++	}
+ 	if err == nil && n > 0 && c.timeout > 0 {
+ 		err = c.nudgeDeadline()
+ 	}
+@@ -120,6 +131,9 @@ func (c *timeoutConn) Read(b []byte) (n int, err error) {
+ func (c *timeoutConn) Write(b []byte) (n int, err error) {
+ 	accounting.TokenBucket.LimitBandwidth(accounting.TokenBucketSlotTransportTx, len(b))
+ 	n, err = c.Conn.Write(b)
++	if n > 0 {
++		c.touch()
++	}
+ 	if err == nil && n > 0 && c.timeout > 0 {
+ 		err = c.nudgeDeadline()
+ 	}
+diff --git a/fs/fshttp/reconnect.go b/fs/fshttp/reconnect.go
+new file mode 100644
+index 0000000..4749411
+--- /dev/null
++++ b/fs/fshttp/reconnect.go
+@@ -0,0 +1,136 @@
++package fshttp
++
++import (
++	"context"
++	"errors"
++	"net"
++	"sync"
++	"sync/atomic"
++	"syscall"
++	"time"
++
++	"github.com/rclone/rclone/fs"
++	"github.com/rclone/rclone/fs/rc"
++)
++
++// After a network outage, the connections opened before it are dead or about
++// to be: the network address may have changed, or a router lost track of them.
++// A read waiting on one stalls until the idle timeout, 5 minutes by default.
++// Ending the connections that have gone quiet makes those reads fail at once,
++// and the transfers retry on new connections.
++
++// quietAfterOutage is how long a connection must have carried nothing to be
++// ended once the network is back.
++const quietAfterOutage = 3 * time.Second
++
++var (
++	liveMu sync.Mutex
++	live   = map[*timeoutConn]struct{}{}
++	// outageSince is when a dial last failed for want of a network, in Unix
++	// nanoseconds, or 0.
++	outageSince atomic.Int64
++)
++
++func newTimeoutConn(c net.Conn, timeout time.Duration) *timeoutConn {
++	t := &timeoutConn{Conn: c, timeout: timeout}
++	t.touch()
++	liveMu.Lock()
++	live[t] = struct{}{}
++	liveMu.Unlock()
++	return t
++}
++
++func (c *timeoutConn) touch() {
++	c.lastActive.Store(time.Now().UnixNano())
++}
++
++// Close forgets the connection and closes it.
++func (c *timeoutConn) Close() error {
++	liveMu.Lock()
++	delete(live, c)
++	liveMu.Unlock()
++	return c.Conn.Close()
++}
++
++// Reconnect ends the connections that have carried nothing for quiet: their
++// pending reads and writes fail with a timeout, which rclone retries on new
++// connections. It returns how many it ended.
++func Reconnect(quiet time.Duration) int {
++	cutoff := time.Now().Add(-quiet).UnixNano()
++	liveMu.Lock()
++	var stale []*timeoutConn
++	for c := range live {
++		if c.lastActive.Load() <= cutoff {
++			stale = append(stale, c)
++		}
++	}
++	liveMu.Unlock()
++	now := time.Now()
++	for _, c := range stale {
++		_ = c.Conn.SetDeadline(now)
++	}
++	return len(stale)
++}
++
++// noteDialFailure records an outage when a dial failed because there was no
++// network: no name resolution, no route. A refused connection is a server
++// problem, not an outage.
++func noteDialFailure(err error) {
++	var dnsErr *net.DNSError
++	var netErr net.Error
++	if errors.As(err, &dnsErr) || errors.Is(err, syscall.ENETUNREACH) || errors.Is(err, syscall.EHOSTUNREACH) ||
++		errors.Is(err, syscall.ENETDOWN) || (errors.As(err, &netErr) && netErr.Timeout()) {
++		outageSince.CompareAndSwap(0, time.Now().UnixNano())
++	}
++}
++
++// noteDialSuccess ends the connections from before an outage once a dial
++// works again.
++func noteDialSuccess() {
++	since := outageSince.Swap(0)
++	if since == 0 {
++		return
++	}
++	if n := Reconnect(quietAfterOutage); n > 0 {
++		fs.Infof(nil, "Network back after %v: restarting %d stalled connections", time.Since(time.Unix(0, since)).Truncate(time.Second), n)
++	}
++}
++
++func init() {
++	rc.Add(rc.Call{
++		Path:  "core/reconnect",
++		Fn:    rcReconnect,
++		Title: "Restarts the connections that have gone quiet.",
++		Help: `
++Ends the network connections that have carried nothing for a few seconds,
++so that the transfers waiting on them start again on new connections. Call it
++when the network has changed or come back.
++
++Parameters:
++
++- quiet - how long a connection must have been quiet, default 3s
++
++Returns the following values:
++
++` + "```" + `
++{
++	"connections": number of connections ended
++}
++` + "```" + `
++`,
++	})
++}
++
++func rcReconnect(ctx context.Context, in rc.Params) (rc.Params, error) {
++	quiet := quietAfterOutage
++	if value, err := in.GetString("quiet"); err == nil {
++		parsed, err := fs.ParseDuration(value)
++		if err != nil {
++			return nil, err
++		}
++		quiet = parsed
++	} else if !rc.IsErrParamNotFound(err) {
++		return nil, err
++	}
++	return rc.Params{"connections": Reconnect(quiet)}, nil
++}
+diff --git a/fs/fshttp/reconnect_test.go b/fs/fshttp/reconnect_test.go
+new file mode 100644
+index 0000000..4333fd4
+--- /dev/null
++++ b/fs/fshttp/reconnect_test.go
+@@ -0,0 +1,116 @@
++package fshttp
++
++import (
++	"context"
++	"net"
++	"os"
++	"testing"
++	"time"
++
++	"github.com/stretchr/testify/assert"
++	"github.com/stretchr/testify/require"
++)
++
++// silentServer accepts connections and never answers, as a server cut off by an outage.
++func silentServer(t *testing.T) string {
++	listener, err := net.Listen("tcp", "127.0.0.1:0")
++	require.NoError(t, err)
++	t.Cleanup(func() { _ = listener.Close() })
++	go func() {
++		for {
++			c, err := listener.Accept()
++			if err != nil {
++				return
++			}
++			t.Cleanup(func() { _ = c.Close() })
++		}
++	}()
++	return listener.Addr().String()
++}
++
++// blockedRead starts a read that only returns when the connection is ended.
++func blockedRead(c net.Conn) chan error {
++	done := make(chan error, 1)
++	go func() {
++		_, err := c.Read(make([]byte, 1))
++		done <- err
++	}()
++	return done
++}
++
++func TestReconnectEndsQuietConnections(t *testing.T) {
++	ctx := context.Background()
++	address := silentServer(t)
++	c, err := NewDialer(ctx).DialContext(ctx, "tcp", address)
++	require.NoError(t, err)
++	defer func() { _ = c.Close() }()
++	done := blockedRead(c)
++
++	assert.Equal(t, 0, Reconnect(time.Hour), "a connection quiet for less than the given time stays")
++	time.Sleep(20 * time.Millisecond)
++	assert.GreaterOrEqual(t, Reconnect(10*time.Millisecond), 1)
++	select {
++	case err := <-done:
++		assert.ErrorIs(t, err, os.ErrDeadlineExceeded)
++	case <-time.After(2 * time.Second):
++		t.Fatal("the read is still waiting")
++	}
++}
++
++func TestNetworkBackEndsStalledConnections(t *testing.T) {
++	ctx := context.Background()
++	address := silentServer(t)
++	dialer := NewDialer(ctx)
++	old, err := dialer.DialContext(ctx, "tcp", address)
++	require.NoError(t, err)
++	defer func() { _ = old.Close() }()
++	done := blockedRead(old)
++	old.(*timeoutConn).lastActive.Store(time.Now().Add(-time.Minute).UnixNano())
++
++	// A failed name lookup is an outage; the next dial that works ends it.
++	_, err = dialer.DialContext(ctx, "tcp", "docklume-test.invalid:80")
++	require.Error(t, err)
++	assert.NotZero(t, outageSince.Load())
++	fresh, err := dialer.DialContext(ctx, "tcp", address)
++	require.NoError(t, err)
++	defer func() { _ = fresh.Close() }()
++	assert.Zero(t, outageSince.Load())
++
++	select {
++	case err := <-done:
++		assert.ErrorIs(t, err, os.ErrDeadlineExceeded)
++	case <-time.After(2 * time.Second):
++		t.Fatal("the connection from before the outage still waits")
++	}
++	_ = fresh.SetReadDeadline(time.Now().Add(50 * time.Millisecond))
++	_, err = fresh.Read(make([]byte, 1))
++	assert.ErrorIs(t, err, os.ErrDeadlineExceeded, "the new connection is left alone until its own deadline")
++}
++
++func TestRefusedConnectionIsNotAnOutage(t *testing.T) {
++	ctx := context.Background()
++	listener, err := net.Listen("tcp", "127.0.0.1:0")
++	require.NoError(t, err)
++	address := listener.Addr().String()
++	require.NoError(t, listener.Close())
++	outageSince.Store(0)
++	_, err = NewDialer(ctx).DialContext(ctx, "tcp", address)
++	require.Error(t, err)
++	assert.Zero(t, outageSince.Load())
++}
++
++func TestClosedConnectionIsForgotten(t *testing.T) {
++	ctx := context.Background()
++	c, err := NewDialer(ctx).DialContext(ctx, "tcp", silentServer(t))
++	require.NoError(t, err)
++	require.NoError(t, c.Close())
++	liveMu.Lock()
++	_, stillThere := live[c.(*timeoutConn)]
++	liveMu.Unlock()
++	assert.False(t, stillThere)
++}
++
++func TestDialerKeepAlive(t *testing.T) {
++	d := NewDialer(context.Background())
++	assert.Equal(t, net.KeepAliveConfig{Enable: true, Idle: 10 * time.Second, Interval: 5 * time.Second, Count: 3}, d.Dialer.KeepAliveConfig)
++}

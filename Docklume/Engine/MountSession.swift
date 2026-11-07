@@ -101,6 +101,12 @@ final class MountSession {
         try await control.call(method, parameters)
     }
 
+    /// Ends the connections that have gone quiet, so reads waiting on one lost with the network start again on a
+    /// new one. Needs the bundled rclone (rclone-patches/0009).
+    func reconnect() async {
+        try? await control.call("core/reconnect")
+    }
+
     struct Sample: Sendable {
         let read: Double
         let write: Double

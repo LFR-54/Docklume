@@ -28,8 +28,10 @@ struct Rclone: Sendable {
         try JSONDecoder().decode([Remote].self, from: Data(try await run(["listremotes", "--json"]).utf8))
     }
 
+    /// Gives up within a minute: with rclone's defaults a server cut off by an outage held it for over 5 minutes.
     func about(_ remote: String, config: URL? = nil) async throws -> Space {
-        try JSONDecoder().decode(Space.self, from: Data(try await run(["about", remote, "--json"], config: config).utf8))
+        let quick = ["--contimeout", "10s", "--timeout", "30s", "--low-level-retries", "2"]
+        return try JSONDecoder().decode(Space.self, from: Data(try await run(["about", remote, "--json"] + quick, config: config).utf8))
     }
 
     /// Every remote with its parameters; secrets included, so the result stays in memory.
