@@ -2,7 +2,8 @@
 
 App macOS native (SwiftUI, macOS 15+, Apple Silicon) qui monte des stockages cloud comme disques dans le Finder, à la
 manière de RaiDrive sous Windows, avec un rclone patché inclus. Priorité au débit, puis à une interface native.
-S'appelait CloudShelf jusqu'à la 0.2 : le nom était une marque déposée par d'autres.
+S'appelait CloudShelf au début : le nom était une marque déposée par d'autres. La numérotation est repartie à 0.1 avec
+la première release GitHub ; l'historique d'avant n'est plus dans les notes de version.
 
 ## Règles de travail
 
@@ -149,9 +150,11 @@ remesurer. L'essentiel :
 - `tools/outage/run.sh reconnect|wait` : coupure simulée sur un montage macFUSE local ; la lecture repart en environ
   1,5 s avec `core/reconnect`, reste figée sans.
 - `tools/screenshots/render.sh` : refait `docs/images` (README et site) avec des comptes de démo et liste les images
-  qui ont changé. Copier ensuite les images voulues dans `docs/images`. La hauteur de fenêtre sort parfois 34 pt plus
-  grande : le script garde le bon tirage, et le relancer suffit si une image change de taille. Un rendu hors écran
-  ne doit pas fixer la hauteur de `MainWindow` par `.frame` : le bas de la fenêtre sort alors du cadre.
+  qui ont changé. Copier ensuite les images voulues dans `docs/images`. La version affichée vient de l'app rendue :
+  `DOCKLUME_APP=<Release.app>` rend depuis la Release, sans recompiler l'app Debug en service. La hauteur de fenêtre
+  sort parfois 34 pt plus grande : le script garde le bon tirage, et le relancer suffit si une image change de taille.
+  Un rendu hors écran ne doit pas fixer la hauteur de `MainWindow` par `.frame` : le bas de la fenêtre sort alors du
+  cadre.
 - Une vraie fenêtre de test se capture par `screencapture -l <numéro>` ; écran verrouillé, la capture échoue et le
   serveur graphique ne dessine plus rien, donc pas de mesure possible.
 - Tests sans toucher aux lecteurs de l'utilisateur : `RCLONE_CONFIG` vers un fichier temporaire avec un remote
@@ -166,6 +169,10 @@ remesurer. L'essentiel :
 - Dépôt public `LFR-54/Docklume` (MIT). Site GitHub Pages dans `docs/` (lfr-54.github.io/Docklume), dont
   `confidentialite.html` pour l'écran de consentement Google.
 - Nouvelle version : `MARKETING_VERSION` et `CURRENT_PROJECT_VERSION` dans le projet, `Model/Releases.swift` (la
-  dernière avec `latest: true`), README.
+  dernière avec `latest: true`), nom du zip dans le README, captures refaites depuis la Release.
+- Release GitHub : build `-configuration Release`, puis
+  `ditto -c -k --keepParent --sequesterRsrc build/DerivedData/Build/Products/Release/Docklume.app build/release/Docklume-<version>.zip`
+  et `gh release create v<version> <zip> --title "Docklume <version>" --notes-file …`. L'app est signée ad hoc, non
+  notariée : le README explique l'ouverture par Réglages Système › Confidentialité et sécurité.
 - Logos : `brand-*.imageset` en PDF vectoriel tirés de Wikimedia Commons (OneDrive en PNG), crédités dans le README.
   L'icône kDrive est redessinée depuis les calques de Infomaniak/ios-kDrive (GPL-3.0).

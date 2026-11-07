@@ -8,7 +8,8 @@ set -euo pipefail
 ROOT=${0:A:h:h:h}
 HERE=${0:A:h}
 OUT=${1:-$ROOT/build/screenshots}
-APP=$ROOT/build/DerivedData/Build/Products/Debug/Docklume.app
+# DOCKLUME_APP points at another build, such as the Release one, to leave the Debug app in use untouched.
+APP=${DOCKLUME_APP:-$ROOT/build/DerivedData/Build/Products/Debug/Docklume.app}
 [[ -d $APP ]] || { echo "Pas de build Debug dans build/DerivedData : compilez Docklume d'abord." >&2; exit 1; }
 WORK=$(mktemp -d)
 trap 'rm -rf $WORK; defaults delete readme-snap 2>/dev/null || true' EXIT
