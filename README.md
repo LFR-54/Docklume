@@ -17,22 +17,34 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/images/drives-dark.png">
-    <img src="docs/images/drives-light.png" width="920" alt="Fenêtre principale de Docklume : cinq lecteurs, dont une médiathèque Dropbox lue à 104 Mo/s">
+    <img src="docs/images/drives-light.png" width="920" alt="Fenêtre principale de Docklume avec cinq lecteurs">
   </picture>
 </p>
 
-Docklume transforme chaque compte en ligne en un lecteur du Finder, comme RaiDrive sous Windows. L'app est native et embarque une version optimisée de [rclone](https://rclone.org).
+Docklume fait apparaître vos comptes Dropbox, Google Drive ou OneDrive, votre NAS et vos serveurs dans le Finder, comme des disques. Vos fichiers restent en ligne : vous les ouvrez, les modifiez et les copiez comme s'ils étaient sur votre Mac. C'est l'équivalent de RaiDrive, pensé pour macOS.
 
-## Points forts
+## Fonctionnalités
 
-- **Rapide.** 60 Mo/s sur un seul fichier Dropbox, et la ligne saturée dès que plusieurs fichiers sont lus.
-- **Simple à monter.** Avec macFUSE, ou avec le client NFS intégré à macOS, sans rien installer.
-- **Discret.** Docklume démarre avec la session et reste dans la barre des menus, avec le débit en direct.
-- **Sûr.** Les fichiers pas encore envoyés ne sont jamais effacés, et une grosse copie ralentit au lieu de remplir le disque.
-- **Solide.** Après une coupure d'Internet, les lectures repartent seules, et un serveur qui ne répond pas ne bloque pas le Finder.
-- **Privé.** Aucun serveur, aucune télémétrie : vos identifiants restent dans `rclone.conf`, sur votre Mac.
+- **Vos comptes dans le Finder.** Chaque compte devient un lecteur, utilisable par toutes vos apps, Emby, Plex ou Jellyfin compris.
+- **Réglé selon l'usage.** Vidéo, documents ou sauvegarde : chaque lecteur est réglé pour ce que vous en faites.
+- **Le débit en direct.** Dans la fenêtre et dans la barre des menus, lecteur par lecteur.
+- **Toujours prêt.** Docklume démarre avec votre session, reste dans la barre des menus et monte les lecteurs de votre choix.
+- **Rien de perdu.** Un fichier pas encore envoyé reste sur le Mac jusqu'à son envoi, et Docklume prévient avant de démonter ou de quitter.
+- **Coupures gérées.** Après une coupure d'Internet, vos lecteurs reprennent seuls.
+- **Tags du Finder.** Tags et couleurs restent sur vos fichiers en ligne, avec macFUSE.
+- **Chiffrement.** Un lecteur peut chiffrer vos fichiers sur le Mac, avant leur envoi.
+- **Privé.** Pas de compte Docklume, pas de serveur intermédiaire, aucune télémétrie.
 
-**Services :** Dropbox, Google Drive, OneDrive, Box, MEGA, Proton Drive, kDrive, compatibles S3, WebDAV, SFTP, FTP, SMB, Synology, QNAP, Nextcloud.
+## Services pris en charge
+
+| Type | Services |
+| --- | --- |
+| **Stockage en ligne** | Dropbox (personnel et Business), Google Drive (et Google Workspace), OneDrive (personnel et professionnel), Box, MEGA, Proton Drive, kDrive d'Infomaniak |
+| **Stockage objet** | Amazon S3 et compatibles : Backblaze B2, Wasabi, Cloudflare R2… |
+| **NAS** | Synology, QNAP, et tout NAS accessible en SMB ou en WebDAV |
+| **Serveurs** | Nextcloud et ownCloud, WebDAV, SFTP, FTP et FTPS, partages Windows (SMB) |
+
+Vous utilisez déjà rclone ? Les remotes de votre `rclone.conf`, de n'importe quel type, sont repris au premier lancement, en lecture seule tant que vous ne changez pas ce réglage.
 
 ## En images
 
@@ -87,15 +99,38 @@ Docklume transforme chaque compte en ligne en un lecteur du Finder, comme RaiDri
   </tr>
 </table>
 
+
+## Configuration requise
+
+- Un Mac Apple Silicon (M1 ou plus récent), sous macOS 15 Sequoia ou plus récent.
+- macFUSE, facultatif : voir [macFUSE ou NFS](#macfuse-ou-nfs-).
+- Rien d'autre : rclone est inclus dans l'app.
+
 ## Installer
 
 1. Téléchargez `Docklume-0.1.zip` depuis la [dernière version](https://github.com/LFR-54/Docklume/releases/latest), ouvrez-le et glissez Docklume dans Applications.
 2. Au premier lancement, macOS bloque l'app, qui n'est pas encore notariée par Apple. Ouvrez **Réglages Système › Confidentialité et sécurité**, puis cliquez sur **Ouvrir quand même**.
-3. Pour monter avec macFUSE, installez [macFUSE](https://macfuse.github.io) et autorisez son extension (sur Apple Silicon, macOS demande de passer en sécurité réduite). Sans macFUSE, choisissez **NFS intégré** dans la fiche du lecteur.
 
-Il faut macOS 15 ou plus récent, sur un Mac Apple Silicon.
+## Premiers pas
 
-> **Google Drive** : la clé partagée de rclone est souvent limitée par Google. Créez votre propre clé, gratuite, en suivant le [guide de rclone](https://rclone.org/drive/#making-your-own-client-id), puis ajoutez-la dans la fiche du lecteur, **Clé Google › Utiliser ma clé…**
+1. Cliquez sur **Ajouter** et choisissez votre service.
+2. Connectez-vous : dans le navigateur pour Dropbox, Google Drive, OneDrive et Box, avec vos identifiants pour les autres.
+3. Cliquez sur **Monter** : le lecteur apparaît dans le Finder, et dans le dossier `Cloud` de votre dossier personnel.
+
+## macFUSE ou NFS ?
+
+Docklume monte vos lecteurs de deux façons, au choix pour chaque lecteur, dans sa fiche :
+
+- **macFUSE**, la plus complète : les tags du Finder sont gardés, et une vidéo se lit sans remplir le disque. Il faut installer [macFUSE](https://macfuse.github.io) et autoriser son extension ; sur un Mac Apple Silicon, macOS demande d'abord de réduire la sécurité depuis le mode de récupération.
+- **NFS intégré**, sans rien installer : macOS sait déjà le faire. Les tags du Finder ne sont pas gardés.
+
+## Google Drive : utilisez votre propre clé
+
+Google limite souvent la clé que rclone partage entre tous ses utilisateurs, ce qui ralentit le lecteur. Avec votre propre clé, gratuite, il a son propre quota : créez-la en suivant le [guide de rclone](https://rclone.org/drive/#making-your-own-client-id), puis ajoutez-la dans la fiche du lecteur, **Clé Google › Utiliser ma clé…**
+
+## Désinstaller
+
+Attendez la fin des envois en cours, quittez Docklume depuis la barre des menus, puis mettez l'app à la corbeille. Ses réglages sont dans `~/Library/Application Support/Docklume` et ses caches dans `~/Library/Caches/Docklume`. Vos comptes restent dans `~/.config/rclone/rclone.conf`.
 
 ## Compiler
 
