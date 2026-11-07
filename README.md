@@ -34,6 +34,59 @@ Docklume transforme chaque compte en ligne en un lecteur du Finder, comme RaiDri
 
 **Services :** Dropbox, Google Drive, OneDrive, Box, MEGA, Proton Drive, kDrive, compatibles S3, WebDAV, SFTP, FTP, SMB, Synology, QNAP, Nextcloud.
 
+## En images
+
+<table>
+  <tr>
+    <td width="50%" align="center" valign="top">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/detail-dark.png">
+  <img src="docs/images/detail-light.png" alt="Fiche d'un lecteur">
+</picture>
+      <p align="center"><b>Fiche du lecteur</b><br><sub>Profil, cache, limite de débit et méthode de montage, lecteur par lecteur</sub></p>
+    </td>
+    <td width="50%" align="center" valign="top">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/activity-dark.png">
+  <img src="docs/images/activity-light.png" alt="Page Activité">
+</picture>
+      <p align="center"><b>Activité</b><br><sub>Le débit des 60 dernières secondes et les envois en cours</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/add-dark.png">
+  <img src="docs/images/add-light.png" alt="Ajout d'un lecteur">
+</picture>
+      <p align="center"><b>Ajout d'un lecteur</b><br><sub>Choisissez le service, connectez-vous dans le navigateur</sub></p>
+    </td>
+    <td width="50%" align="center" valign="top">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/panel-dark.png">
+  <img src="docs/images/panel-light.png" width="300" alt="Panneau de la barre des menus">
+</picture>
+      <p align="center"><b>Barre des menus</b><br><sub>Débit, lecteurs et envois, sans ouvrir la fenêtre</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/settings-dark.png">
+  <img src="docs/images/settings-light.png" alt="Paramètres">
+</picture>
+      <p align="center"><b>Paramètres</b><br><sub>Ouverture de session, notifications, cache et moteur</sub></p>
+    </td>
+    <td width="50%" align="center" valign="top">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/notes-dark.png">
+  <img src="docs/images/notes-light.png" alt="Notes de version">
+</picture>
+      <p align="center"><b>Notes de version</b><br><sub>Les nouveautés de chaque version, dans l'app</sub></p>
+    </td>
+  </tr>
+</table>
+
 ## Installer
 
 1. Téléchargez `Docklume-0.1.zip` depuis la [dernière version](https://github.com/LFR-54/Docklume/releases/latest), ouvrez-le et glissez Docklume dans Applications.
