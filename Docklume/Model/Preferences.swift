@@ -43,7 +43,8 @@ final class Preferences {
     /// Why the login item is off although it was turned on.
     private(set) var loginItemProblem: String?
 
-    init(defaults: UserDefaults = .standard) {
+    /// `openAtLogin` stands in for the login item's state, for screenshots that must not register one.
+    init(defaults: UserDefaults = .standard, openAtLogin: Bool? = nil) {
         self.defaults = defaults
         defaults.register(defaults: [
             "showMenuBarExtra": true, "showSpeedInMenuBar": true,
@@ -61,7 +62,7 @@ final class Preferences {
         showNotesAfterUpdate = defaults.bool(forKey: "showNotesAfterUpdate")
         notesSeenVersion = defaults.string(forKey: "notesSeenVersion")
         christmas = defaults.string(forKey: "christmas").flatMap(ChristmasTheme.init) ?? .automatic
-        openAtLogin = SMAppService.mainApp.status == .enabled
+        self.openAtLogin = openAtLogin ?? (SMAppService.mainApp.status == .enabled)
     }
 
     /// Turns the login item on at the first launch that offers it, as Docklume keeps the drives mounted from the

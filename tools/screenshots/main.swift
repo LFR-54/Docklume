@@ -5,6 +5,8 @@ import SwiftUI
 let out = URL(filePath: CommandLine.arguments[1], directoryHint: .isDirectory)
 NSApplication.shared.setActivationPolicy(.accessory)
 
+let engine = "1.75.2-docklume.9"
+
 func ramp(_ peak: Double, start: Int, stop: Int = 60) -> [Double] {
     (0..<60).map { i in
         guard i >= start, i < stop else { return 0 }
@@ -44,12 +46,17 @@ func ramp(_ peak: Double, start: Int, stop: Int = 60) -> [Double] {
     return drives
 }
 
-/// The app's usual look, as the Christmas theme would come on by itself in December; DOCKLUME_CHRISTMAS=1 shows it.
+/// The app's usual look: the Christmas theme stays on Automatique, or off during its season so that it does not show;
+/// DOCKLUME_CHRISTMAS=1 shows it. The release notes count as read, so no dot sits on their button.
 @MainActor func readmePreferences() -> Preferences {
     let defaults = UserDefaults(suiteName: "readme-snap")!
     let christmas = ProcessInfo.processInfo.environment["DOCKLUME_CHRISTMAS"] == "1"
-    defaults.set((christmas ? ChristmasTheme.on : .off).rawValue, forKey: "christmas")
-    return Preferences(defaults: defaults)
+    let season = ChristmasTheme.automatic.isOn(Date())
+    defaults.set((christmas ? ChristmasTheme.on : season ? .off : .automatic).rawValue, forKey: "christmas")
+    defaults.set(Preferences.appVersion, forKey: "notesSeenVersion")
+    // As on a Mac with macFUSE, where the login item is on by default.
+    defaults.set(MountMethod.macFUSE.rawValue, forKey: "defaultMethod")
+    return Preferences(defaults: defaults, openAtLogin: true)
 }
 
 /// Draws a 2x bitmap with rounded corners, a hairline edge and a soft shadow on a transparent canvas.
@@ -95,7 +102,7 @@ struct Light { let rect: CGRect; let fill: CGColor; let edge: CGColor }
 
 @MainActor func window(_ name: String, size: CGSize, setup: (AppState) -> Void) {
     for dark in [false, true] {
-        let store = DriveStore(showing: sample(), preferences: readmePreferences(), engineVersion: "1.75.2-docklume.8")
+        let store = DriveStore(showing: sample(), preferences: readmePreferences(), engineVersion: engine)
         let app = AppState()
         setup(app)
         let host = NSHostingView(rootView: MainWindow().environment(store).environment(app).frame(width: size.width, height: size.height))
@@ -124,7 +131,7 @@ struct Light { let rect: CGRect; let fill: CGColor; let edge: CGColor }
 
 @MainActor func panel() {
     for dark in [false, true] {
-        let store = DriveStore(showing: sample(), preferences: readmePreferences(), engineVersion: "1.75.2-docklume.8")
+        let store = DriveStore(showing: sample(), preferences: readmePreferences(), engineVersion: engine)
         let host = NSHostingView(rootView: MenuBarPanel().environment(store).environment(AppState()).frame(width: 344).fixedSize(horizontal: false, vertical: true)
             .background(Color(nsColor: dark ? NSColor(white: 0.17, alpha: 1) : NSColor(white: 0.95, alpha: 1))))
         host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
@@ -141,5 +148,8 @@ MainActor.assumeIsolated {
     window("detail", size: size) { $0.page = .drive("Médiathèque") }
     window("activity", size: size) { $0.page = .activity }
     window("add", size: size) { $0.overlay = .add(provider: "dropbox") }
+    window("settings", size: size) { $0.page = .settings }
+    window("notes", size: size) { $0.overlay = .notes }
+    window("google", size: size) { $0.page = .drive("Google Drive"); $0.overlay = .googleKey(drive: "Google Drive") }
     panel()
 }

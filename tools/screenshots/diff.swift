@@ -10,6 +10,7 @@ func pixels(_ url: URL) -> (Int, Int, [UInt8]) {
 }
 let old = URL(filePath: CommandLine.arguments[1]), new = URL(filePath: CommandLine.arguments[2])
 for name in try! FileManager.default.contentsOfDirectory(atPath: new.path).sorted() where name.hasSuffix(".png") {
+    guard FileManager.default.fileExists(atPath: old.appending(path: name).path) else { print("\(name): nouvelle"); continue }
     let (w1, h1, a) = pixels(old.appending(path: name)), (w2, h2, b) = pixels(new.appending(path: name))
     guard w1 == w2, h1 == h2 else { print("\(name): taille \(w1)×\(h1) → \(w2)×\(h2)"); continue }
     var minX = w1, minY = h1, maxX = -1, maxY = -1, count = 0
