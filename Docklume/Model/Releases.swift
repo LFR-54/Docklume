@@ -44,13 +44,15 @@ struct Release: Identifiable {
                 Note(text: "Docklume tourne en permanence : fermer la fenêtre retire l'icône du Dock et laisse l'app dans la barre des menus, lecteurs montés", bold: true),
                 Note(text: "Docklume démarre à l'ouverture de session, fenêtre fermée : les lecteurs se montent et l'app attend dans la barre des menus. Réglage activé d'office, à couper dans Paramètres"),
                 Note(text: "Après un plantage ou un arrêt forcé de Docklume, les lecteurs restés montés sont repris au lancement"),
-                Note(text: "Google Drive avec votre propre clé Google, saisie ou importée depuis son fichier JSON")
+                Note(text: "Google Drive avec votre propre clé Google, saisie ou importée depuis son fichier JSON"),
+                Note(text: "Thème de Noël, du 1er décembre au 6 janvier ou à la demande dans Paramètres : ciel d'hiver, neige posée sur les lecteurs, bonnet sur le logo")
             ],
             .improved: [
+                Note(text: "Après une coupure d'Internet, une lecture en cours repart dès le retour du réseau, au lieu de rester figée jusqu'à 5 minutes sur une connexion perdue", bold: true),
                 Note(text: "Envois vers Google Drive par blocs de 64 Mo, 8 fichiers à la fois : 73 Mo/s au lieu de 45", bold: true),
                 Note(text: "Logos officiels des services, dans leurs couleurs"),
                 Note(text: "Liste des lecteurs allégée : barre d'espace bleue tant que le service n'approche pas du plein, méthode de montage en info-bulle du logo"),
-                Note(text: "Un lecteur qui ne joint pas son serveur au montage, comme à l'ouverture de session avant le réseau, réessaie pendant deux minutes et demie"),
+                Note(text: "Un lecteur qui ne joint pas son serveur au montage, comme à l'ouverture de session avant le réseau ou pendant une coupure, réessaie jusqu'au retour du réseau, et aussitôt que macOS le signale"),
                 Note(text: "La connexion d'un nouveau lecteur est essayée avant l'enregistrement, et ses erreurs sont expliquées, kDrive compris"),
                 Note(text: "La mesure du cache ne ralentit plus l'interface, et un serveur lent ne fige plus le débit affiché"),
                 Note(text: "Le journal d'un lecteur repart de zéro au-delà de 20 Mo, en gardant le précédent")
@@ -60,6 +62,7 @@ struct Release: Identifiable {
                 Note(text: "Copier un fichier téléchargé ou tagué sur un lecteur échouait avec « Operation not permitted », et pouvait laisser un fichier vide en NFS"),
                 Note(text: "Copier un dossier avec le Finder échouait avec l'erreur -8062 et laissait la copie incomplète"),
                 Note(text: "Fermer la fenêtre quittait Docklume, et démontait les lecteurs, avec un utilitaire qui quitte les apps du Dock restées sans fenêtre, comme Vorssaint"),
+                Note(text: "Un lecteur dont le serveur ne répond pas restait sur « Montage… » et pouvait bloquer le Finder : Docklume vérifie maintenant que le serveur répond avant de monter, et réessaie jusqu'à ce qu'il réponde"),
                 Note(text: "Éjecter un lecteur depuis le Finder le remontait cinq secondes plus tard"),
                 Note(text: "Démonter un lecteur macFUSE pendant qu'un fichier était ouvert pouvait bloquer rclone, et l'app qui lisait le fichier, pendant de longues minutes"),
                 Note(text: "Après avoir quitté l'app, remonter un lecteur macFUSE pouvait échouer avec « Resource busy »"),
