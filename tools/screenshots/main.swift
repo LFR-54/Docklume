@@ -44,6 +44,14 @@ func ramp(_ peak: Double, start: Int, stop: Int = 60) -> [Double] {
     return drives
 }
 
+/// The app's usual look, as the Christmas theme would come on by itself in December; DOCKLUME_CHRISTMAS=1 shows it.
+@MainActor func readmePreferences() -> Preferences {
+    let defaults = UserDefaults(suiteName: "readme-snap")!
+    let christmas = ProcessInfo.processInfo.environment["DOCKLUME_CHRISTMAS"] == "1"
+    defaults.set((christmas ? ChristmasTheme.on : .off).rawValue, forKey: "christmas")
+    return Preferences(defaults: defaults)
+}
+
 /// Draws a 2x bitmap with rounded corners, a hairline edge and a soft shadow on a transparent canvas.
 /// The title bar buttons of an inactive offscreen window are grey; they are painted in their active colors.
 struct Light { let rect: CGRect; let fill: CGColor; let edge: CGColor }
@@ -87,7 +95,7 @@ struct Light { let rect: CGRect; let fill: CGColor; let edge: CGColor }
 
 @MainActor func window(_ name: String, size: CGSize, setup: (AppState) -> Void) {
     for dark in [false, true] {
-        let store = DriveStore(showing: sample(), preferences: Preferences(defaults: UserDefaults(suiteName: "readme-snap")!), engineVersion: "1.75.2-docklume.8")
+        let store = DriveStore(showing: sample(), preferences: readmePreferences(), engineVersion: "1.75.2-docklume.8")
         let app = AppState()
         setup(app)
         let host = NSHostingView(rootView: MainWindow().environment(store).environment(app).frame(width: size.width, height: size.height))
@@ -116,7 +124,7 @@ struct Light { let rect: CGRect; let fill: CGColor; let edge: CGColor }
 
 @MainActor func panel() {
     for dark in [false, true] {
-        let store = DriveStore(showing: sample(), preferences: Preferences(defaults: UserDefaults(suiteName: "readme-snap")!), engineVersion: "1.75.2-docklume.8")
+        let store = DriveStore(showing: sample(), preferences: readmePreferences(), engineVersion: "1.75.2-docklume.8")
         let host = NSHostingView(rootView: MenuBarPanel().environment(store).environment(AppState()).frame(width: 344).fixedSize(horizontal: false, vertical: true)
             .background(Color(nsColor: dark ? NSColor(white: 0.17, alpha: 1) : NSColor(white: 0.95, alpha: 1))))
         host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)

@@ -3,6 +3,7 @@ import SwiftUI
 struct DrivesPage: View {
     @Environment(DriveStore.self) private var store
     @Environment(AppState.self) private var app
+    @Environment(\.christmas) private var christmas
 
     var body: some View {
         PageScroll {
@@ -22,7 +23,8 @@ struct DrivesPage: View {
             } else if filtered.isEmpty {
                 EmptyMessage(text: "Aucun lecteur ne correspond à « \(app.query) ».")
             } else {
-                LazyVStack(spacing: 10) {
+                // The snow on each card needs the room.
+                LazyVStack(spacing: christmas ? 18 : 10) {
                     ForEach(filtered) { DriveCard(drive: $0) }
                 }
             }
@@ -88,6 +90,7 @@ struct DriveCard: View {
         .padding(.trailing, 16)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .hairlineBorder(RoundedRectangle(cornerRadius: 14, style: .continuous), hovering ? Theme.controlBorder : Theme.cardBorder)
+        .snowCap(radius: 14, depth: Christmas.driveSnow, seed: drive.id, everywhere: true)
         .contentShape(RoundedRectangle(cornerRadius: 14))
         .onHover { hovering = $0 }
         .onTapGesture { app.page = .drive(drive.id) }

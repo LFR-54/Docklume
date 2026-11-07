@@ -65,6 +65,12 @@ extension EnvironmentValues {
     @Entry var compactLayout = false
     /// The room a dialog has inside the window.
     @Entry var dialogSpace = CGSize(width: CGFloat.infinity, height: .infinity)
+    /// The Christmas theme is on: the logo wears a hat.
+    @Entry var christmas = false
+    /// Inside a page, where only the surfaces at the very top hold snow.
+    @Entry var snowOnTopOnly = false
+    /// The window is being resized: drawings that depend on a size wait for the end.
+    @Entry var liveResize = false
 }
 
 extension View {
@@ -80,10 +86,11 @@ extension View {
         modifier(HairlineBorder(shape: shape, style: style))
     }
 
-    /// Card surface with its hairline border.
+    /// Card surface with its hairline border, and snow on top with the Christmas theme.
     func card(radius: CGFloat = 12, fill: Color = Theme.card) -> some View {
         background(fill, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .hairlineBorder(RoundedRectangle(cornerRadius: radius, style: .continuous), Theme.cardBorder)
+            .snowCap(radius: radius)
     }
 
     /// A control surface: fill, hairline border and the mockup's one-pixel shadow.

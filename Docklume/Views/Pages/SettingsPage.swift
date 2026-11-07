@@ -22,6 +22,9 @@ struct SettingsPage: View {
                     SettingsRow("Afficher le débit dans la barre des menus", hint: nil as String?) {
                         SwitchToggle(isOn: $preferences.showSpeedInMenuBar, label: "Afficher le débit")
                     }
+                    SettingsRow("Thème de Noël", hint: preferences.christmas == .automatic ? "Du 1er décembre au 6 janvier." : nil) {
+                        PopupButton(selection: $preferences.christmas, options: ChristmasTheme.allCases, title: \.rawValue)
+                    }
                 }
                 SectionTitle(text: "Notifications")
                 SettingsGroup {

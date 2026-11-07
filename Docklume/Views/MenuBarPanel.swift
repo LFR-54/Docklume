@@ -46,6 +46,7 @@ struct MenuBarPanel: View {
         .foregroundStyle(Theme.text)
         .padding(6)
         .frame(width: 344)
+        .environment(\.christmas, store.preferences.isChristmas)
     }
 
     private var head: some View {

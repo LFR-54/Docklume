@@ -5,12 +5,14 @@ struct MainWindow: View {
     @Environment(DriveStore.self) private var store
     @Environment(AppState.self) private var app
     @State private var compact = false
+    @State private var resizing = false
 
     /// Below this width the layout tightens; at and above it, it is the mockup's.
     static let compactWidth: CGFloat = 1000
     static let minimumSize = CGSize(width: 840, height: 580)
 
     var body: some View {
+        let christmas = store.preferences.isChristmas
         HStack(spacing: 0) {
             Sidebar()
                 .frame(width: 250)
@@ -24,10 +26,14 @@ struct MainWindow: View {
         }
         .font(.system(size: 13))
         .foregroundStyle(Theme.text)
-        .background(Theme.window)
+        .background {
+            if christmas { WinterBackdrop() } else { Theme.window }
+        }
+        .environment(\.christmas, christmas)
+        .environment(\.liveResize, resizing)
         .overlay { DialogHost() }
         .overlay(alignment: .bottom) { ToastView() }
-        .background(WindowChrome())
+        .background(WindowChrome { resizing = $0 })
         .ignoresSafeArea()
         .animation(.easeOut(duration: 0.15), value: app.overlay)
         .onGeometryChange(for: Bool.self) { $0.size.width < Self.compactWidth } action: { compact = $0 }
@@ -53,34 +59,51 @@ struct MainWindow: View {
 }
 
 /// An empty unified toolbar: macOS then sets the window buttons 19 pt in from the corner, inside the sidebar,
-/// instead of 9 pt with a bare hidden title bar. Clicks below still reach the content.
+/// instead of 9 pt with a bare hidden title bar. Clicks below still reach the content. Also tells when the user
+/// starts and ends resizing the window.
 private struct WindowChrome: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView { ChromeView() }
-    func updateNSView(_ nsView: NSView, context: Context) {}
+    let onLiveResize: (Bool) -> Void
+
+    func makeNSView(context: Context) -> ChromeView { ChromeView() }
+    func updateNSView(_ nsView: ChromeView, context: Context) { nsView.onLiveResize = onLiveResize }
 
     final class ChromeView: NSView {
+        var onLiveResize: ((Bool) -> Void)?
+
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
-            guard let window, window.styleMask.contains(.titled), window.toolbar == nil else { return }
+            NotificationCenter.default.removeObserver(self)
+            guard let window else { return }
+            NotificationCenter.default.addObserver(self, selector: #selector(resizeStarted), name: NSWindow.willStartLiveResizeNotification, object: window)
+            NotificationCenter.default.addObserver(self, selector: #selector(resizeEnded), name: NSWindow.didEndLiveResizeNotification, object: window)
+            guard window.styleMask.contains(.titled), window.toolbar == nil else { return }
             window.toolbar = NSToolbar(identifier: "Docklume")
             window.toolbarStyle = .unified
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
         }
+
+        @objc private func resizeStarted(_ note: Notification) { onLiveResize?(true) }
+        @objc private func resizeEnded(_ note: Notification) { onLiveResize?(false) }
     }
 }
 
 /// Scrolling page body with the mockup's content insets.
 struct PageScroll<Content: View>: View {
     @ViewBuilder let content: Content
+    @Environment(\.christmas) private var christmas
 
     var body: some View {
         ScrollView {
             content
+                // Room for the snow on the first card, which the scroll view would cut.
+                .padding(.top, christmas ? 15 : 0)
                 .padding(.leading, 16)
                 .padding(.trailing, 24)
                 .padding(.bottom, 24)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
+                .coordinateSpace(.named(Christmas.pageSpace))
+                .environment(\.snowOnTopOnly, true)
         }
         .scrollIndicators(.automatic)
     }
@@ -134,6 +157,7 @@ struct Sidebar: View {
         .frame(maxHeight: .infinity)
         .background(Theme.sidebar, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .hairlineBorder(RoundedRectangle(cornerRadius: 18, style: .continuous), Theme.cardBorder)
+        .snowCap(radius: 18, depth: 7, seed: "sidebar")
     }
 
     private var isDrives: Bool {
@@ -246,6 +270,7 @@ struct AppLogo: View {
     let size: CGFloat
     var shadowRadius: CGFloat = 1.5
     var shadowY: CGFloat = 1
+    @Environment(\.christmas) private var christmas
 
     var body: some View {
         Image("Logo")
@@ -253,6 +278,14 @@ struct AppLogo: View {
             .interpolation(.high)
             .frame(width: size, height: size)
             .shadow(color: .black.opacity(0.22), radius: shadowRadius, y: shadowY)
+            .overlay(alignment: .topLeading) {
+                if christmas {
+                    SantaHat()
+                        .frame(width: size * 0.7, height: size * 0.56)
+                        .rotationEffect(.degrees(-18))
+                        .offset(x: -size * 0.16, y: -size * 0.27)
+                }
+            }
             .accessibilityHidden(true)
     }
 }

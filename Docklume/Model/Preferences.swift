@@ -17,6 +17,10 @@ final class Preferences {
     var showNotesAfterUpdate: Bool { didSet { defaults.set(showNotesAfterUpdate, forKey: "showNotesAfterUpdate") } }
     /// The last version whose notes were opened, which clears the dot on the notes button.
     var notesSeenVersion: String? { didSet { defaults.set(notesSeenVersion, forKey: "notesSeenVersion") } }
+    var christmas: ChristmasTheme { didSet { defaults.set(christmas.rawValue, forKey: "christmas") } }
+
+    /// Whether the windows wear the Christmas theme today.
+    var isChristmas: Bool { christmas.isOn(Date()) }
 
     /// Mirrors the login item; turning it on asks macOS to open Docklume at login.
     var openAtLogin: Bool {
@@ -56,6 +60,7 @@ final class Preferences {
         cacheBase = defaults.string(forKey: "cacheBase").map { URL(filePath: $0, directoryHint: .isDirectory) } ?? MountOptions.defaultCacheBase
         showNotesAfterUpdate = defaults.bool(forKey: "showNotesAfterUpdate")
         notesSeenVersion = defaults.string(forKey: "notesSeenVersion")
+        christmas = defaults.string(forKey: "christmas").flatMap(ChristmasTheme.init) ?? .automatic
         openAtLogin = SMAppService.mainApp.status == .enabled
     }
 
@@ -72,4 +77,21 @@ final class Preferences {
 
     static let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1"
     static let appBuild = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+}
+
+enum ChristmasTheme: String, CaseIterable {
+    case automatic = "Automatique"
+    case on = "Activé"
+    case off = "Désactivé"
+
+    /// The automatic theme runs from the 1st of December to Epiphany.
+    func isOn(_ date: Date, calendar: Calendar = .current) -> Bool {
+        switch self {
+        case .on: return true
+        case .off: return false
+        case .automatic:
+            let day = calendar.dateComponents([.month, .day], from: date)
+            return day.month == 12 || (day.month == 1 && (day.day ?? 0) <= 6)
+        }
+    }
 }

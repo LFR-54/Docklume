@@ -3,6 +3,7 @@
 # accounts, light and dark, at 2x, then lists what changed against docs/images.
 # Needs a Debug build in build/DerivedData, whose asset catalog holds the colors and logos.
 # Usage: tools/screenshots/render.sh [output folder, build/screenshots by default]
+# DOCKLUME_CHRISTMAS=1 renders the Christmas theme instead, for a look; those images are not for docs/images.
 set -euo pipefail
 ROOT=${0:A:h:h:h}
 HERE=${0:A:h}
