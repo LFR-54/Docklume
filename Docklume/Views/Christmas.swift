@@ -9,8 +9,8 @@ import SwiftUI
 enum Christmas {
     /// The scrolling content of a page, where a card's place gives its snow a shape of its own.
     static let pageSpace = "christmas.page"
-    /// The snow on each drive card, at its thickest.
-    static let driveSnow: CGFloat = 13
+    /// The snow on each drive card, at its thickest: it leaves at least 8 pt below the card above.
+    static let driveSnow: CGFloat = 10
 }
 
 /// Behind the content: the winter sky.
@@ -83,8 +83,8 @@ private struct SnowCap: View, Equatable {
     let seed: UInt64
     let dark: Bool
 
-    /// The pile above the edge, the lip below it and its shadow.
-    var height: CGFloat { depth + 8 }
+    /// The pile above the edge, then room for the lip, the rounded corners and the shadow below it.
+    var height: CGFloat { depth + 12 }
 
     var body: some View {
         Canvas { context, _ in
@@ -100,33 +100,41 @@ private struct SnowCap: View, Equatable {
                 let t = max(0, min(1, (min(x, width - x) - start) / rise))
                 return sqrt(1 - (1 - t) * (1 - t))
             }
-            func top(_ x: CGFloat) -> CGFloat {
+            // The top of the surface, which falls away along its rounded corners.
+            func base(_ x: CGFloat) -> CGFloat {
+                let inset = radius - min(x, width - x)
+                guard inset > 0 else { return edge }
+                return edge + radius - sqrt(max(0, radius * radius - inset * inset))
+            }
+            func lumps(_ x: CGFloat) -> CGFloat {
                 let wave = Double(x)
                 let lumps = 0.72 + 0.17 * sin(wave / 53 + phases[0]) + 0.09 * sin(wave / 19 + phases[1]) + 0.08 * sin(wave / 127 + phases[2])
                 let bumps = mounds.reduce(CGFloat(0)) { sum, mound in
                     sum + mound.lift * CGFloat(exp(-pow(Double((x - mound.center) / mound.spread), 2)))
                 }
-                return edge - depth * shoulder(x) * (CGFloat(lumps) + bumps)
-            }
-            func lip(_ x: CGFloat) -> CGFloat {
-                edge + shoulder(x) * CGFloat(2.6 + 1.1 * sin(Double(x) / 17 + phases[3]))
+                return CGFloat(lumps) + bumps
             }
 
-            let step: CGFloat = 2
+            let xs = Array(stride(from: 0, to: width, by: 3)) + [width]
+            // The highest lump reaches `depth` exactly: never higher, towards the surface above, nor cut by the canvas.
+            let peak = max(0.01, xs.map(lumps).max() ?? 1)
+            let top = xs.map { CGPoint(x: $0, y: base($0) - depth * shoulder($0) * lumps($0) / peak) }
+            // Where the shoulder ends, the pile and its lip thin out to nothing on the corner, without a line beyond.
+            let rim = xs.map { CGPoint(x: $0, y: base($0) - 0.6 * shoulder($0)) }
+            let lip = xs.map { CGPoint(x: $0, y: base($0) + shoulder($0) * CGFloat(2.6 + 1.1 * sin(Double($0) / 17 + phases[3]))) }
+
             var pile = Path()
-            pile.move(to: CGPoint(x: 0, y: edge))
-            for x in stride(from: 0, through: width, by: step) { pile.addLine(to: CGPoint(x: x, y: top(x))) }
-            pile.addLine(to: CGPoint(x: width, y: edge))
+            pile.addSmoothLines(through: top)
+            pile.addSmoothLines(through: xs.reversed().map { CGPoint(x: $0, y: base($0)) }, continuing: true)
             pile.closeSubpath()
             var face = Path()
-            face.move(to: CGPoint(x: 0, y: edge))
-            for x in stride(from: 0, through: width, by: step) { face.addLine(to: CGPoint(x: x, y: edge - 0.5)) }
-            for x in stride(from: width, through: 0, by: -step) { face.addLine(to: CGPoint(x: x, y: lip(x))) }
+            face.addSmoothLines(through: rim)
+            face.addSmoothLines(through: lip.reversed(), continuing: true)
             face.closeSubpath()
 
-            // The shadow falls on the face of the surface only: above the edge it would smudge the background.
+            // The shadow falls on the face of the surface only: beyond it, it would smudge the background.
             context.drawLayer { layer in
-                layer.clip(to: Path(CGRect(x: 0, y: edge, width: width, height: height)))
+                layer.clip(to: Path(roundedRect: CGRect(x: 0, y: edge, width: width, height: height + radius), cornerRadius: radius))
                 layer.addFilter(.blur(radius: 2))
                 layer.translateBy(x: 0, y: 2)
                 layer.fill(face, with: .color(dark ? .black.opacity(0.5) : Color(hex: 0x2C4466).opacity(0.26)))
@@ -134,13 +142,30 @@ private struct SnowCap: View, Equatable {
             let lit = dark ? [Color(hex: 0xF4F7FB), Color(hex: 0xCBD5E3)] : [.white, Color(hex: 0xE8EEF6)]
             context.fill(pile, with: .linearGradient(Gradient(colors: lit), startPoint: CGPoint(x: 0, y: edge - depth), endPoint: CGPoint(x: 0, y: edge)))
             if !dark {
-                // White on a pale background needs its outline.
-                context.stroke(pile, with: .color(Color(hex: 0x8EA3C0).opacity(0.3)), lineWidth: 0.6)
+                // White on a pale background needs its outline, along the top only: the base lies on the surface.
+                var outline = Path()
+                outline.addSmoothLines(through: top)
+                context.stroke(outline, with: .color(Color(hex: 0x8EA3C0).opacity(0.3)), lineWidth: 0.6)
             }
             // The front of the lip faces away from the light.
             let shaded = dark ? [Color(hex: 0xC2CDDD), Color(hex: 0x93A2B9)] : [Color(hex: 0xDCE5F0), Color(hex: 0xBCCADD)]
             context.fill(face, with: .linearGradient(Gradient(colors: shaded), startPoint: CGPoint(x: 0, y: edge), endPoint: CGPoint(x: 0, y: edge + 5)))
         }
+    }
+}
+
+private extension Path {
+    /// A smooth curve through the points, each sample bending it rather than turning a corner, which shows as steps
+    /// on a 1x screen.
+    mutating func addSmoothLines(through points: [CGPoint], continuing: Bool = false) {
+        guard let first = points.first else { return }
+        if continuing { addLine(to: first) } else { move(to: first) }
+        guard points.count > 2 else { points.dropFirst().forEach { addLine(to: $0) }; return }
+        for i in 1..<(points.count - 1) {
+            let next = points[i + 1], here = points[i]
+            addQuadCurve(to: CGPoint(x: (here.x + next.x) / 2, y: (here.y + next.y) / 2), control: here)
+        }
+        addLine(to: points[points.count - 1])
     }
 }
 

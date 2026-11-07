@@ -6,6 +6,8 @@ let out = URL(filePath: CommandLine.arguments[1], directoryHint: .isDirectory)
 NSApplication.shared.setActivationPolicy(.accessory)
 
 let engine = "1.75.2-docklume.9"
+/// 2 by default, as on a Retina screen; DOCKLUME_SCALE=1 renders what a 1x screen shows.
+let scale = CGFloat(Double(ProcessInfo.processInfo.environment["DOCKLUME_SCALE"] ?? "") ?? 2)
 
 func ramp(_ peak: Double, start: Int, stop: Int = 60) -> [Double] {
     (0..<60).map { i in
@@ -59,12 +61,12 @@ func ramp(_ peak: Double, start: Int, stop: Int = 60) -> [Double] {
     return Preferences(defaults: defaults, openAtLogin: true)
 }
 
-/// Draws a 2x bitmap with rounded corners, a hairline edge and a soft shadow on a transparent canvas.
+/// Draws the bitmap with rounded corners, a hairline edge and a soft shadow on a transparent canvas.
 /// The title bar buttons of an inactive offscreen window are grey; they are painted in their active colors.
 struct Light { let rect: CGRect; let fill: CGColor; let edge: CGColor }
 
 @MainActor func framed(_ rep: NSBitmapImageRep, radius: CGFloat, dark: Bool, lights: [Light] = []) -> Data {
-    let scale: CGFloat = 2, margin: CGFloat = 56 * scale
+    let margin: CGFloat = 56 * scale
     let w = CGFloat(rep.pixelsWide), h = CGFloat(rep.pixelsHigh)
     let canvas = CGSize(width: w + margin * 2, height: h + margin * 2)
     let ctx = CGContext(data: nil, width: Int(canvas.width), height: Int(canvas.height), bitsPerComponent: 8, bytesPerRow: 0,
@@ -93,7 +95,7 @@ struct Light { let rect: CGRect; let fill: CGColor; let edge: CGColor }
 }
 
 @MainActor func bitmap(_ view: NSView, _ size: CGSize) -> NSBitmapImageRep {
-    let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(size.width * 2), pixelsHigh: Int(size.height * 2), bitsPerSample: 8,
+    let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(size.width * scale), pixelsHigh: Int(size.height * scale), bitsPerSample: 8,
                                samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
     rep.size = size
     view.cacheDisplay(in: NSRect(origin: .zero, size: size), to: rep)

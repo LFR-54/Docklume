@@ -121,11 +121,14 @@ remesurer. L'essentiel :
   des surfaces du haut d'une page et de la carte du panneau, bonnet sur le logo. Tout est statique.
 - La neige (`snowCap`) est Equatable, donc une carte redessinée chaque seconde pour son débit ne la redessine pas ;
   elle reste figée pendant le redimensionnement (`liveResize`, signalé par `WindowChrome`) et se refait à la fin.
+- Sa bosse la plus haute vaut exactement `depth` (10 pt sur une carte de lecteur, 8 pt d'air sous la carte du
+  dessus), elle suit l'arrondi des coins et s'y amincit jusqu'à rien, et son contour est lissé : un trait clair au
+  bout de la neige et des marches sur le contour se voyaient à 1x sur fond sombre.
 - Essayé puis refusé par l'utilisateur, à ne pas reproposer : neige qui tombe, guirlandes (ampoules, sapin, perles,
   décorations suspendues), sapin décoré, houx, congère ou neige en bas de la fenêtre, flocons immobiles dans le fond,
   gouttes sous la neige.
 - Les captures du README forcent le thème désactivé ; `DOCKLUME_CHRISTMAS=1 tools/screenshots/render.sh <dossier>`
-  rend le thème pour le regarder.
+  rend le thème pour le regarder, et `DOCKLUME_SCALE=1` comme sur les écrans 1x de l'utilisateur.
 
 ## Comportements macOS à connaître
 
