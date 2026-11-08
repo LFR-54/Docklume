@@ -6,6 +6,10 @@ let out = URL(filePath: CommandLine.arguments[1], directoryHint: .isDirectory)
 NSApplication.shared.setActivationPolicy(.accessory)
 
 let engine = "1.75.2-docklume.9"
+/// English by default, as on GitHub; DOCKLUME_LANG=fr renders the French screens, with French demo accounts, and
+/// DOCKLUME_LANG=system the language of this Mac, with the setting on Système.
+let languageSetting = ProcessInfo.processInfo.environment["DOCKLUME_LANG"] ?? "en"
+let english = (AppLanguage(rawValue: languageSetting) ?? .english).resolved == .english
 /// 2 by default, as on a Retina screen; DOCKLUME_SCALE=1 renders what a 1x screen shows.
 let scale = CGFloat(Double(ProcessInfo.processInfo.environment["DOCKLUME_SCALE"] ?? "") ?? 2)
 
@@ -37,14 +41,16 @@ func ramp(_ peak: Double, start: Int, stop: Int = 60) -> [Double] {
         }
         return drive
     }
+    let french = !english
     let drives = [
-        make("Médiathèque", "dropbox", "camille@exemple.fr", mounted: true, read: 104, used: 8.54, total: 11, profile: .streaming, readOnly: true),
-        make("Google Drive", "gdrive", "camille.martin@exemple.fr", mounted: true, write: 3.2, used: 0.66, total: 2, cache: 1.4),
-        make("OneDrive Pro", "onedrive", "c.martin@studio-exemple.fr", mounted: true, read: 18, used: 0.42, total: 1),
-        make("Sauvegardes", "s3", "sauvegardes-mac", mounted: false, used: 1.2, total: 10, profile: .backup, fuse: false),
-        make("NAS Maison", "synology", "famille", mounted: false, used: 2.4, total: 4, fuse: false)
+        make(french ? "Médiathèque" : "Media Library", "dropbox", french ? "camille@exemple.fr" : "sam@example.com", mounted: true, read: 104,
+             used: 8.54, total: 11, profile: .streaming, readOnly: true),
+        make("Google Drive", "gdrive", french ? "camille.martin@exemple.fr" : "sam.taylor@example.com", mounted: true, write: 3.2, used: 0.66, total: 2, cache: 1.4),
+        make("OneDrive Pro", "onedrive", french ? "c.martin@studio-exemple.fr" : "s.taylor@studio-example.com", mounted: true, read: 18, used: 0.42, total: 1),
+        make(french ? "Sauvegardes" : "Backups", "s3", french ? "sauvegardes-mac" : "mac-backups", mounted: false, used: 1.2, total: 10, profile: .backup, fuse: false),
+        make(french ? "NAS Maison" : "Home NAS", "synology", french ? "famille" : "family", mounted: false, used: 2.4, total: 4, fuse: false)
     ]
-    drives[1].uploads = [Upload(name: "Studio/Devis/Devis 2026-11.pdf", bytes: 640_000, size: 1_000_000, speed: 3.2e6)]
+    drives[1].uploads = [Upload(name: french ? "Studio/Devis/Devis 2026-11.pdf" : "Studio/Quotes/Quote 2026-11.pdf", bytes: 640_000, size: 1_000_000, speed: 3.2e6)]
     return drives
 }
 
@@ -56,6 +62,7 @@ func ramp(_ peak: Double, start: Int, stop: Int = 60) -> [Double] {
     let season = ChristmasTheme.automatic.isOn(Date())
     defaults.set((christmas ? ChristmasTheme.on : season ? .off : .automatic).rawValue, forKey: "christmas")
     defaults.set(Preferences.appVersion, forKey: "notesSeenVersion")
+    defaults.set(languageSetting, forKey: "language")
     // As on a Mac with macFUSE, where the login item is on by default.
     defaults.set(MountMethod.macFUSE.rawValue, forKey: "defaultMethod")
     return Preferences(defaults: defaults, openAtLogin: true)
@@ -144,14 +151,22 @@ struct Light { let rect: CGRect; let fill: CGColor; let edge: CGColor }
     }
 }
 
+/// DOCKLUME_ONLY=settings,notes renders only those screens.
+let only = ProcessInfo.processInfo.environment["DOCKLUME_ONLY"].map { Set($0.split(separator: ",").map(String.init)) }
+
 MainActor.assumeIsolated {
     let size = CGSize(width: 1120, height: 720)
-    window("drives", size: size) { $0.page = .drives }
-    window("detail", size: size) { $0.page = .drive("Médiathèque") }
-    window("activity", size: size) { $0.page = .activity }
-    window("add", size: size) { $0.overlay = .add(provider: "dropbox") }
-    window("settings", size: size) { $0.page = .settings }
-    window("notes", size: size) { $0.overlay = .notes }
-    window("google", size: size) { $0.page = .drive("Google Drive"); $0.overlay = .googleKey(drive: "Google Drive") }
-    panel()
+    let screens: [(String, (AppState) -> Void)] = [
+        ("drives", { $0.page = .drives }),
+        ("detail", { $0.page = .drive(english ? "Media Library" : "Médiathèque") }),
+        ("activity", { $0.page = .activity }),
+        ("add", { $0.overlay = .add(provider: "dropbox") }),
+        ("settings", { $0.page = .settings }),
+        ("notes", { $0.overlay = .notes }),
+        ("google", { $0.page = .drive("Google Drive"); $0.overlay = .googleKey(drive: "Google Drive") })
+    ]
+    for (name, setup) in screens where only?.contains(name) ?? true {
+        window(name, size: size, setup: setup)
+    }
+    if only?.contains("panel") ?? true { panel() }
 }
