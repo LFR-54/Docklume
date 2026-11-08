@@ -4,137 +4,139 @@
 
 <h1 align="center">Docklume</h1>
 
+<p align="center"><b>English</b> · <a href="README.fr.md">Français</a></p>
+
 <p align="center">
-  <b>Vos stockages en ligne, montés comme des disques dans le Finder.</b>
+  <b>Your cloud storage, mounted as disks in the Finder.</b>
 </p>
 
 <p align="center">
-  <a href="https://github.com/LFR-54/Docklume/releases/latest"><img alt="Dernière version" src="https://img.shields.io/github/v/release/LFR-54/Docklume?label=version&color=0A84FF"></a>
-  <img alt="macOS 15 ou plus récent, Apple Silicon" src="https://img.shields.io/badge/macOS-15%2B%20·%20Apple%20Silicon-111?logo=apple&logoColor=white">
-  <a href="LICENSE"><img alt="Licence MIT" src="https://img.shields.io/badge/licence-MIT-2EA44F"></a>
+  <a href="https://github.com/LFR-54/Docklume/releases/latest"><img alt="Latest version" src="https://img.shields.io/github/v/release/LFR-54/Docklume?label=version&color=0A84FF"></a>
+  <img alt="macOS 15 or later, Apple Silicon" src="https://img.shields.io/badge/macOS-15%2B%20·%20Apple%20Silicon-111?logo=apple&logoColor=white">
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2EA44F"></a>
 </p>
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/images/drives-dark.png">
-    <img src="docs/images/drives-light.png" width="920" alt="Fenêtre principale de Docklume avec cinq lecteurs">
+    <img src="docs/images/drives-light.png" width="920" alt="Docklume's main window with five drives">
   </picture>
 </p>
 
-Docklume fait apparaître vos comptes Dropbox, Google Drive ou OneDrive, votre NAS et vos serveurs dans le Finder, comme des disques. Vos fichiers restent en ligne : vous les ouvrez, les modifiez et les copiez comme s'ils étaient sur votre Mac. C'est l'équivalent de RaiDrive, pensé pour macOS.
+Docklume brings your Dropbox, Google Drive or OneDrive accounts, your NAS and your servers into the Finder, as disks. Your files stay online: you open, edit and copy them as if they were on your Mac. Think RaiDrive, made for macOS.
 
-## Fonctionnalités
+## Features
 
-- **Vos comptes dans le Finder.** Chaque compte devient un lecteur, utilisable par toutes vos apps, Emby, Plex ou Jellyfin compris.
-- **Réglé selon l'usage.** Vidéo, documents ou sauvegarde : chaque lecteur est réglé pour ce que vous en faites.
-- **Le débit en direct.** Dans la fenêtre et dans la barre des menus, lecteur par lecteur.
-- **Toujours prêt.** Docklume démarre avec votre session, reste dans la barre des menus et monte les lecteurs de votre choix.
-- **Rien de perdu.** Un fichier pas encore envoyé reste sur le Mac jusqu'à son envoi, et Docklume prévient avant de démonter ou de quitter.
-- **Coupures gérées.** Après une coupure d'Internet, vos lecteurs reprennent seuls.
-- **Tags du Finder.** Tags et couleurs restent sur vos fichiers en ligne, avec macFUSE.
-- **Chiffrement.** Un lecteur peut chiffrer vos fichiers sur le Mac, avant leur envoi.
-- **Privé.** Pas de compte Docklume, pas de serveur intermédiaire, aucune télémétrie.
+- **Your accounts in the Finder.** Each account becomes a drive that every app can use, Emby, Plex and Jellyfin included.
+- **Tuned for the job.** Video, documents or backups: each drive is set up for what you do with it.
+- **Live throughput.** In the window and in the menu bar, drive by drive.
+- **Always ready.** Docklume starts with your session, stays in the menu bar and mounts the drives you choose.
+- **Nothing lost.** A file not uploaded yet stays on the Mac until it is, and Docklume warns you before unmounting or quitting.
+- **Outages handled.** After an Internet outage, your drives pick up on their own.
+- **Finder tags.** Tags and colors stay on your online files, with macFUSE.
+- **Encryption.** A drive can encrypt your files on the Mac, before they are uploaded.
+- **English or French.** Docklume follows the language of macOS, or the one you pick in Settings.
+- **Private.** No Docklume account, no server in between, no telemetry.
 
-## Services pris en charge
+## Supported services
 
 | Type | Services |
 | --- | --- |
-| **Stockage en ligne** | Dropbox (personnel et Business), Google Drive (et Google Workspace), OneDrive (personnel et professionnel), Box, MEGA, Proton Drive, kDrive d'Infomaniak |
-| **Stockage objet** | Amazon S3 et compatibles : Backblaze B2, Wasabi, Cloudflare R2… |
-| **NAS** | Synology, QNAP, et tout NAS accessible en SMB ou en WebDAV |
-| **Serveurs** | Nextcloud et ownCloud, WebDAV, SFTP, FTP et FTPS, partages Windows (SMB) |
+| **Cloud storage** | Dropbox (Personal and Business), Google Drive (and Google Workspace), OneDrive (Personal and work), Box, MEGA, Proton Drive, Infomaniak kDrive |
+| **Object storage** | Amazon S3 and compatibles: Backblaze B2, Wasabi, Cloudflare R2… |
+| **NAS** | Synology, QNAP, and any NAS reachable over SMB or WebDAV |
+| **Servers** | Nextcloud and ownCloud, WebDAV, SFTP, FTP and FTPS, Windows shares (SMB) |
 
-Vous utilisez déjà rclone ? Les remotes de votre `rclone.conf`, de n'importe quel type, sont repris au premier lancement, en lecture seule tant que vous ne changez pas ce réglage.
+Already using rclone? The remotes in your `rclone.conf`, of any type, are picked up at first launch, read-only until you change that setting.
 
-## En images
+## Screenshots
 
 <table>
   <tr>
     <td width="50%" align="center" valign="top">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/detail-dark.png">
-  <img src="docs/images/detail-light.png" alt="Fiche d'un lecteur">
+  <img src="docs/images/detail-light.png" alt="A drive's page">
 </picture>
-      <p align="center"><b>Fiche du lecteur</b><br><sub>Profil, cache, limite de débit et méthode de montage, lecteur par lecteur</sub></p>
+      <p align="center"><b>Drive page</b><br><sub>Profile, cache, speed limit and mount method, drive by drive</sub></p>
     </td>
     <td width="50%" align="center" valign="top">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/activity-dark.png">
-  <img src="docs/images/activity-light.png" alt="Page Activité">
+  <img src="docs/images/activity-light.png" alt="Activity page">
 </picture>
-      <p align="center"><b>Activité</b><br><sub>Le débit des 60 dernières secondes et les envois en cours</sub></p>
+      <p align="center"><b>Activity</b><br><sub>Throughput over the last 60 seconds and uploads in progress</sub></p>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/add-dark.png">
-  <img src="docs/images/add-light.png" alt="Ajout d'un lecteur">
+  <img src="docs/images/add-light.png" alt="Adding a drive">
 </picture>
-      <p align="center"><b>Ajout d'un lecteur</b><br><sub>Choisissez le service, connectez-vous dans le navigateur</sub></p>
+      <p align="center"><b>Adding a drive</b><br><sub>Pick the service, sign in in the browser</sub></p>
     </td>
     <td width="50%" align="center" valign="top">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/panel-dark.png">
-  <img src="docs/images/panel-light.png" width="300" alt="Panneau de la barre des menus">
+  <img src="docs/images/panel-light.png" width="300" alt="Menu bar panel">
 </picture>
-      <p align="center"><b>Barre des menus</b><br><sub>Débit, lecteurs et envois, sans ouvrir la fenêtre</sub></p>
+      <p align="center"><b>Menu bar</b><br><sub>Throughput, drives and uploads, without opening the window</sub></p>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/settings-dark.png">
-  <img src="docs/images/settings-light.png" alt="Paramètres">
+  <img src="docs/images/settings-light.png" alt="Settings">
 </picture>
-      <p align="center"><b>Paramètres</b><br><sub>Ouverture de session, notifications, cache et moteur</sub></p>
+      <p align="center"><b>Settings</b><br><sub>Language, login, notifications, cache and engine</sub></p>
     </td>
     <td width="50%" align="center" valign="top">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/notes-dark.png">
-  <img src="docs/images/notes-light.png" alt="Notes de version">
+  <img src="docs/images/notes-light.png" alt="Release notes">
 </picture>
-      <p align="center"><b>Notes de version</b><br><sub>Les nouveautés de chaque version, dans l'app</sub></p>
+      <p align="center"><b>Release notes</b><br><sub>What's new in each version, inside the app</sub></p>
     </td>
   </tr>
 </table>
 
+## Requirements
 
-## Configuration requise
+- A Mac with Apple Silicon (M1 or later), running macOS 15 Sequoia or later.
+- macFUSE, optional: see [macFUSE or NFS?](#macfuse-or-nfs)
+- Nothing else: rclone comes with the app.
 
-- Un Mac Apple Silicon (M1 ou plus récent), sous macOS 15 Sequoia ou plus récent.
-- macFUSE, facultatif : voir [macFUSE ou NFS](#macfuse-ou-nfs-).
-- Rien d'autre : rclone est inclus dans l'app.
+## Install
 
-## Installer
+1. Download `Docklume-0.1.zip` from the [latest release](https://github.com/LFR-54/Docklume/releases/latest), open it and drag Docklume to Applications.
+2. On first launch, macOS blocks the app, which is not notarized by Apple yet. Open **System Settings › Privacy & Security**, then click **Open Anyway**.
 
-1. Téléchargez `Docklume-0.1.zip` depuis la [dernière version](https://github.com/LFR-54/Docklume/releases/latest), ouvrez-le et glissez Docklume dans Applications.
-2. Au premier lancement, macOS bloque l'app, qui n'est pas encore notariée par Apple. Ouvrez **Réglages Système › Confidentialité et sécurité**, puis cliquez sur **Ouvrir quand même**.
+## Getting started
 
-## Premiers pas
+1. Click **Add** and pick your service.
+2. Sign in: in the browser for Dropbox, Google Drive, OneDrive and Box, with your credentials for the others.
+3. Click **Mount**: the drive appears in the Finder, and in the `Cloud` folder of your home folder.
 
-1. Cliquez sur **Ajouter** et choisissez votre service.
-2. Connectez-vous : dans le navigateur pour Dropbox, Google Drive, OneDrive et Box, avec vos identifiants pour les autres.
-3. Cliquez sur **Monter** : le lecteur apparaît dans le Finder, et dans le dossier `Cloud` de votre dossier personnel.
+## macFUSE or NFS?
 
-## macFUSE ou NFS ?
+Docklume mounts your drives in one of two ways, chosen for each drive on its page:
 
-Docklume monte vos lecteurs de deux façons, au choix pour chaque lecteur, dans sa fiche :
+- **macFUSE**, the most complete: Finder tags are kept, and a video plays without filling the disk. You need to install [macFUSE](https://macfuse.github.io) and allow its extension; on a Mac with Apple Silicon, macOS first asks you to reduce security from Recovery mode.
+- **Built-in NFS**, nothing to install: macOS already knows how. Finder tags are not kept.
 
-- **macFUSE**, la plus complète : les tags du Finder sont gardés, et une vidéo se lit sans remplir le disque. Il faut installer [macFUSE](https://macfuse.github.io) et autoriser son extension ; sur un Mac Apple Silicon, macOS demande d'abord de réduire la sécurité depuis le mode de récupération.
-- **NFS intégré**, sans rien installer : macOS sait déjà le faire. Les tags du Finder ne sont pas gardés.
+## Google Drive: use your own key
 
-## Google Drive : utilisez votre propre clé
+Google often limits the key rclone shares between all its users, which slows the drive down. With your own key, which is free, the drive gets its own quota: create it by following [rclone's guide](https://rclone.org/drive/#making-your-own-client-id), then add it on the drive's page, **Google key › Use My Key…**
 
-Google limite souvent la clé que rclone partage entre tous ses utilisateurs, ce qui ralentit le lecteur. Avec votre propre clé, gratuite, il a son propre quota : créez-la en suivant le [guide de rclone](https://rclone.org/drive/#making-your-own-client-id), puis ajoutez-la dans la fiche du lecteur, **Clé Google › Utiliser ma clé…**
+## Uninstall
 
-## Désinstaller
+Wait for uploads in progress to finish, quit Docklume from the menu bar, then move the app to the Trash. Its settings are in `~/Library/Application Support/Docklume` and its caches in `~/Library/Caches/Docklume`. Your accounts stay in `~/.config/rclone/rclone.conf`.
 
-Attendez la fin des envois en cours, quittez Docklume depuis la barre des menus, puis mettez l'app à la corbeille. Ses réglages sont dans `~/Library/Application Support/Docklume` et ses caches dans `~/Library/Caches/Docklume`. Vos comptes restent dans `~/.config/rclone/rclone.conf`.
+## Build
 
-## Compiler
-
-Il faut Xcode 26 ou plus récent, [Go](https://go.dev/dl/) 1.26 et macFUSE 5.
+You need Xcode 26 or later, [Go](https://go.dev/dl/) 1.26 and macFUSE 5.
 
 ```bash
 git clone https://github.com/LFR-54/Docklume.git && cd Docklume
@@ -142,10 +144,10 @@ scripts/build-rclone.sh
 xcodebuild -project Docklume.xcodeproj -scheme Docklume -configuration Release -derivedDataPath build/DerivedData build
 ```
 
-`build-rclone.sh` télécharge rclone 1.75.2 et lui applique les correctifs de [`rclone-patches/`](rclone-patches). L'app se trouve ensuite dans `build/DerivedData/Build/Products/Release`.
+`build-rclone.sh` downloads rclone 1.75.2 and applies the patches in [`rclone-patches/`](rclone-patches). The app is then in `build/DerivedData/Build/Products/Release`.
 
-## Licence
+## License
 
-Docklume est sous [licence MIT](LICENSE), comme rclone et ses correctifs. macFUSE n'est pas inclus. [Règles de confidentialité](https://lfr-54.github.io/Docklume/confidentialite.html).
+Docklume is under the [MIT License](LICENSE), like rclone and its patches. macFUSE is not included. [Privacy policy](https://lfr-54.github.io/Docklume/privacy.html).
 
-Les logos des services appartiennent à leurs propriétaires et servent seulement à les reconnaître. Ils viennent de [Wikimedia Commons](https://commons.wikimedia.org) : celui de Nextcloud vient d'openDesk (Apache 2.0), les autres sont dans le domaine public. L'icône de kDrive est © Infomaniak, redessinée d'après [ios-kDrive](https://github.com/Infomaniak/ios-kDrive) (GPL-3.0).
+Service logos belong to their owners and are used only to identify them. They come from [Wikimedia Commons](https://commons.wikimedia.org): Nextcloud's from openDesk (Apache 2.0), the others are in the public domain. The kDrive icon is © Infomaniak, redrawn from [ios-kDrive](https://github.com/Infomaniak/ios-kDrive) (GPL-3.0).

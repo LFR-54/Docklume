@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy · Docklume</title>
+  <meta name="description" content="Docklume's privacy policy: no data collected, credentials stored on the user's Mac.">
+  <link rel="icon" href="images/favicon.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="alternate" hreflang="fr" href="confidentialite.html">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <a class="brand" href="./"><img src="images/icon.png" alt="">Docklume</a>
+      <nav>
+        <a href="./">Home</a>
+        <a href="https://github.com/LFR-54/Docklume">GitHub</a>
+        <a href="confidentialite.html" hreflang="fr" lang="fr">Français</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <article class="article">
+      <h1>Privacy policy</h1>
+      <p class="date">Effective November 3, 2026</p>
+
+      <p>Docklume is a macOS app that mounts online storage (Dropbox, Google Drive, OneDrive, S3, NAS…) as disks in the Finder, using the open-source rclone. It runs entirely on your Mac.</p>
+
+      <h2>What Docklume does not do</h2>
+      <ul>
+        <li>Docklume collects no personal data and has no server.</li>
+        <li>No data is sent to the app's author or to third parties.</li>
+        <li>The app contains no telemetry, usage statistics or advertising.</li>
+      </ul>
+
+      <h2>Data from connected services</h2>
+      <p>When you connect a service, Google Drive for example, you authorize Docklume in your browser. The service then issues an access token, which rclone saves in its configuration file on your Mac (<code>~/.config/rclone/rclone.conf</code>).</p>
+      <p>This token is used only to:</p>
+      <ul>
+        <li>list, read and, if you turn read-only off, create, change and delete your files, at your request, through the mounted drive;</li>
+        <li>show the account's email address and the available space in the app.</li>
+      </ul>
+      <p>Files read or waiting to be uploaded may be kept for a while in a cache on your Mac (<code>~/Library/Caches/Docklume</code>). You can clear it at any time from the app. Data travels directly between your Mac and the service's servers, over HTTPS.</p>
+
+      <h2>Google user data</h2>
+      <p>Docklume's use and transfer to any other app of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements. This information is not sold, not used for advertising and not read by anyone.</p>
+
+      <h2>Deleting your data</h2>
+      <ul>
+        <li>Deleting a drive in Docklume erases its cache and, if it was created in the app, its rclone configuration.</li>
+        <li>You can revoke access at any time from your account, for example at <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a> for Google.</li>
+      </ul>
+
+      <h2>Contact</h2>
+      <p>For any question, open an issue on the project's <a href="https://github.com/LFR-54/Docklume/issues">GitHub page</a>.</p>
+    </article>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>Docklume · MIT License</span>
+      <nav>
+        <a href="./">Home</a>
+        <a href="https://github.com/LFR-54/Docklume">Source code</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
