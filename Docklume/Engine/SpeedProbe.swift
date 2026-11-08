@@ -52,7 +52,7 @@ enum SpeedProbe {
                 }
                 if cancelled.isSet { throw CancellationError() }
                 let seconds = (ContinuousClock.now - start) / .seconds(1)
-                guard total > 0, seconds > 0 else { throw RcloneError.command("Aucune donnée n'a été lue.") }
+                guard total > 0, seconds > 0 else { throw RcloneError.command(L("Aucune donnée n'a été lue.")) }
                 return Result(speed: Double(total) / seconds, latency: Int(((first ?? .zero) / .milliseconds(1)).rounded()))
             }.value
         } onCancel: {

@@ -12,16 +12,16 @@ struct DrivesPage: View {
             } else if store.drives.isEmpty {
                 if !store.isLoading {
                     VStack(spacing: 16) {
-                        Text("Ajoutez un premier lecteur pour le retrouver dans le Finder.")
+                        Text(L("Ajoutez un premier lecteur pour le retrouver dans le Finder."))
                             .foregroundStyle(Theme.text2)
-                        Button("Ajouter un lecteur") { app.overlay = .add(provider: "webdav") }
+                        Button(L("Ajouter un lecteur")) { app.overlay = .add(provider: "webdav") }
                             .buttonStyle(PushButtonStyle.largePrimary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 60)
                 }
             } else if filtered.isEmpty {
-                EmptyMessage(text: "Aucun lecteur ne correspond à « \(app.query) ».")
+                EmptyMessage(text: L("Aucun lecteur ne correspond à « \(app.query) »."))
             } else {
                 // The snow on each card needs the room.
                 LazyVStack(spacing: christmas ? 18 : 10) {
@@ -60,7 +60,7 @@ struct DriveCard: View {
         let actions = DriveActions(store: store, app: app)
         HStack(spacing: 14) {
             ProviderTile(provider: drive.provider, size: 56)
-                .help("\(drive.provider.name), monté avec \(drive.settings.method.rawValue)")
+                .help(L("\(drive.provider.name), monté avec \(drive.settings.method.title)"))
                 .frame(width: 60, alignment: .leading)
             details
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -68,7 +68,7 @@ struct DriveCard: View {
                 .frame(width: compact ? ThroughputBlock.compactWidth : 214, alignment: .trailing)
             // The whole card opens the drive page; a narrow window keeps the room for the name.
             if !compact {
-                IconButton(symbol: "chevron.right", size: 34, iconSize: 15, label: "Détails de \(drive.name)") {
+                IconButton(symbol: "chevron.right", size: 34, iconSize: 15, label: L("Détails de \(drive.name)")) {
                     app.page = .drive(drive.id)
                 }
                 .frame(width: 30)
@@ -83,7 +83,7 @@ struct DriveCard: View {
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
             .fixedSize()
-            .accessibilityLabel("Actions pour \(drive.name)")
+            .accessibilityLabel(L("Actions pour \(drive.name)"))
         }
         .padding(.vertical, 16)
         .padding(.leading, 18)
@@ -106,7 +106,7 @@ struct DriveCard: View {
                     Text(drive.name)
                         .font(.system(size: 15, weight: .semibold))
                         .lineLimit(1)
-                        .help("Double-cliquez pour renommer")
+                        .help(L("Double-cliquez pour renommer"))
                         .onTapGesture(count: 2) { app.renaming = drive.id }
                 }
                 StatePill(kind: drive.status.kind, label: drive.status.label)
@@ -132,7 +132,8 @@ struct DriveCard: View {
                     .textSelection(.enabled)
                     .padding(.top, 4)
             } else if !drive.isMounted, drive.pendingUploads > 0 {
-                Text("\(Format.plural(drive.pendingUploads, "fichier")) en attente d'envoi : montez le lecteur pour l'envoyer\(drive.pendingUploads > 1 ? "s" : "").")
+                Text(drive.pendingUploads > 1 ? L("\(drive.pendingUploads) fichiers en attente d'envoi : montez le lecteur pour les envoyer.")
+                                              : L("\(drive.pendingUploads) fichier en attente d'envoi : montez le lecteur pour l'envoyer."))
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.orangeInk)
                     .lineLimit(2)
@@ -154,11 +155,11 @@ struct DriveCard: View {
         case .mounting, .unmounting:
             HStack(spacing: 8) {
                 ProgressView().controlSize(.small)
-                Text(drive.state == .mounting ? "Montage…" : "Démontage…")
+                Text(drive.state == .mounting ? L("Montage…") : L("Démontage…"))
                     .foregroundStyle(Theme.text2)
             }
         case .unmounted, .failed:
-            Button(drive.errorMessage == nil ? "Monter" : "Réessayer") { actions.run(.mount, drive) }
+            Button(drive.errorMessage == nil ? L("Monter") : L("Réessayer")) { actions.run(.mount, drive) }
                 .buttonStyle(PushButtonStyle(height: 30, padding: 18))
         }
     }
@@ -175,14 +176,14 @@ struct SpaceCaption: View {
         let level = SpaceLevel(space)
         if let total = level.total, let free = level.free {
             if level.isNearlyFull {
-                Text("\(Format.capacity(free)) libres sur \(Format.capacity(total)) · \(Text("Presque plein").foregroundStyle(Theme.red).fontWeight(.medium))")
+                Text("\(L("\(Format.capacity(free)) libres sur \(Format.capacity(total))")) · \(Text(L("Presque plein")).foregroundStyle(Theme.red).fontWeight(.medium))")
                     .monospacedDigit()
             } else {
-                Text("\(Format.capacity(free)) libres sur \(Format.capacity(total))")
+                Text(L("\(Format.capacity(free)) libres sur \(Format.capacity(total))"))
                     .monospacedDigit()
             }
         } else {
-            Text(silent.map { "\($0) ne répond pas" } ?? (unreadable ? "Espace illisible" : space == nil ? "Espace en cours de lecture…" : "Espace non communiqué par ce service"))
+            Text(silent.map { L("\($0) ne répond pas") } ?? (unreadable ? L("Espace illisible") : space == nil ? L("Espace en cours de lecture…") : L("Espace non communiqué par ce service")))
         }
     }
 }
@@ -197,8 +198,8 @@ struct ThroughputBlock: View {
     var body: some View {
         if compact {
             VStack(alignment: .leading, spacing: 2) {
-                line(symbol: "arrow.down", value: read, label: "Lecture")
-                line(symbol: "arrow.up", value: write, label: "Écriture")
+                line(symbol: "arrow.down", value: read, label: L("Lecture"))
+                line(symbol: "arrow.up", value: write, label: L("Écriture"))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -206,8 +207,8 @@ struct ThroughputBlock: View {
             .background(Theme.inset, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         } else {
             HStack(spacing: 12) {
-                cell("Lecture", symbol: "arrow.down", value: read)
-                cell("Écriture", symbol: "arrow.up", value: write)
+                cell(L("Lecture"), symbol: "arrow.down", value: read)
+                cell(L("Écriture"), symbol: "arrow.up", value: write)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -222,7 +223,7 @@ struct ThroughputBlock: View {
             Image(systemName: symbol)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Theme.text2)
-            Text(active ? Format.speed(value) : "Inactif")
+            Text(active ? Format.speed(value) : L("Inactif"))
                 .font(.system(size: 14, weight: active ? .semibold : .medium))
                 .foregroundStyle(active ? Theme.text : Theme.text3)
                 .monospacedDigit()
@@ -244,7 +245,7 @@ struct ThroughputBlock: View {
             .font(.system(size: 12))
             .foregroundStyle(Theme.text2)
             .lineBox(12)
-            Text(active ? Format.speed(value) : "Inactif")
+            Text(active ? Format.speed(value) : L("Inactif"))
                 .font(.system(size: 16, weight: active ? .semibold : .medium))
                 .foregroundStyle(active ? Theme.text : Theme.text3)
                 .monospacedDigit()
@@ -286,7 +287,7 @@ private struct RenameField: View {
                         store.rename(drive, to: text)
                     }
                 }
-                .accessibilityLabel("Nouveau nom de \(drive.name)")
+                .accessibilityLabel(L("Nouveau nom de \(drive.name)"))
             if let error {
                 FieldError(message: error)
             }

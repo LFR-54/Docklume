@@ -111,7 +111,7 @@ struct AlertDialog: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.bottom, 18)
                 HStack(spacing: 8) {
-                    Button("Annuler") { app.overlay = nil }
+                    Button(L("Annuler")) { app.overlay = nil }
                         .buttonStyle(PushButtonStyle.pair())
                         .keyboardShortcut(.cancelAction)
                     Button(alert.confirm) {
@@ -142,7 +142,7 @@ struct AboutDialog: View {
                 Text("Docklume")
                     .font(.system(size: 26, weight: .bold))
                     .tracking(-0.26)
-                Text("Version \(Preferences.appVersion) (\(Preferences.appBuild))")
+                Text(L("Version \(Preferences.appVersion) (\(Preferences.appBuild))"))
                     .foregroundStyle(Theme.text2)
                     .monospacedDigit()
                     .padding(.top, 3)
@@ -163,14 +163,14 @@ struct AboutDialog: View {
                 .card()
                 .padding(.top, 18)
                 .padding(.bottom, 14)
-                Button("Notes de version") { app.overlay = .notes }
+                Button(L("Notes de version")) { app.overlay = .notes }
                     .buttonStyle(PushButtonStyle.pair())
                 Button {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(versionText, forType: .string)
-                    app.show("Informations de version copiées")
+                    app.show(L("Informations de version copiées"))
                 } label: {
-                    Label("Copier les informations de version", systemImage: "doc.on.doc")
+                    Label(L("Copier les informations de version"), systemImage: "doc.on.doc")
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.accent)
                 }
@@ -188,10 +188,10 @@ struct AboutDialog: View {
     }
 
     private var info: [(label: String, value: String)] {
-        [("Moteur", "rclone \(store.engineRelease ?? "…")"),
-         ("Montage", MacFUSE.version.map { "macFUSE \($0) · NFS intégré" } ?? "NFS intégré"),
-         ("Système", "\(Self.system) · \(Self.architecture)"),
-         ("Licence de rclone", "MIT")]
+        [(L("Moteur"), L("rclone \(store.engineRelease ?? "…")")),
+         (L("Montage"), MacFUSE.version.map { L("macFUSE \($0) · NFS intégré") } ?? L("NFS intégré")),
+         (L("Système"), "\(Self.system) · \(Self.architecture)"),
+         (L("Licence de rclone"), "MIT")]
     }
 
     private var versionText: String {
@@ -223,17 +223,17 @@ struct OptionsDialog: View {
     var body: some View {
         ModalSurface(width: 560) {
             VStack(alignment: .leading, spacing: 0) {
-                ModalHead(title: "Options rclone de « \(drive.name) »",
-                          subtitle: "Ajoutées à la commande de montage, après celles du profil.", showsLogo: false) { app.overlay = nil }
+                ModalHead(title: L("Options rclone de « \(drive.name) »"),
+                          subtitle: L("Ajoutées à la commande de montage, après celles du profil."), showsLogo: false) { app.overlay = nil }
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Profil \(drive.settings.profile.rawValue)")
+                    Text(L("Profil \(drive.settings.profile.title)"))
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.text2)
                     Text(MountOptions.profileFlags(drive.settings).joined(separator: " "))
                         .font(.system(size: 12, design: .monospaced))
                         .foregroundStyle(Theme.text2)
                         .textSelection(.enabled)
-                    Text("Vos options")
+                    Text(L("Vos options"))
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.text2)
                         .padding(.top, 8)
@@ -245,9 +245,9 @@ struct OptionsDialog: View {
                 .padding(.horizontal, 22)
                 HStack(spacing: 10) {
                     Spacer()
-                    Button("Annuler") { app.overlay = nil }
+                    Button(L("Annuler")) { app.overlay = nil }
                         .buttonStyle(PushButtonStyle.large)
-                    Button("Enregistrer", action: save)
+                    Button(L("Enregistrer"), action: save)
                         .buttonStyle(PushButtonStyle.largePrimary)
                         .keyboardShortcut(.defaultAction)
                 }
@@ -264,10 +264,10 @@ struct OptionsDialog: View {
         app.overlay = nil
         guard value != drive.settings.extraOptions else { return }
         store.update(drive) { $0.extraOptions = value }
-        guard store.appliesLater(drive) else { return app.show("Options enregistrées") }
+        guard store.appliesLater(drive) else { return app.show(L("Options enregistrées")) }
         Task {
             await store.remount(drive)
-            app.show("« \(drive.name) » remonté avec les nouvelles options")
+            app.show(L("« \(drive.name) » remonté avec les nouvelles options"))
         }
     }
 }

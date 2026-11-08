@@ -13,13 +13,13 @@ struct NotesDialog: View {
         @Bindable var preferences = store.preferences
         ModalSurface(width: 800) {
             VStack(spacing: 0) {
-                ModalHead(title: "Notes de version", subtitle: "Nouveautés, améliorations et corrections de chaque version de Docklume.") {
+                ModalHead(title: L("Notes de version"), subtitle: L("Nouveautés, améliorations et corrections de chaque version de Docklume.")) {
                     app.overlay = nil
                 }
                 HStack(spacing: 10) {
-                    SearchField(text: $query, placeholder: "Rechercher une version ou une note", width: nil, height: 30)
+                    SearchField(text: $query, placeholder: L("Rechercher une version ou une note"), width: nil, height: 30)
                     SegmentedControl(selection: $category, options: [nil] + Release.Category.allCases.map(Optional.some)) {
-                        $0?.filter ?? "Tout"
+                        $0?.filter ?? L("Tout")
                     }
                 }
                 .padding(.horizontal, 22)
@@ -35,10 +35,10 @@ struct NotesDialog: View {
                 .card(fill: Theme.cardSolid)
                 .padding(.horizontal, 22)
                 HStack(spacing: 10) {
-                    Toggle("Afficher après chaque mise à jour", isOn: $preferences.showNotesAfterUpdate)
+                    Toggle(L("Afficher après chaque mise à jour"), isOn: $preferences.showNotesAfterUpdate)
                         .toggleStyle(.checkbox)
                     Spacer()
-                    Button("Fermer") { app.overlay = nil }
+                    Button(L("Fermer")) { app.overlay = nil }
                         .buttonStyle(PushButtonStyle.largePrimary)
                         .keyboardShortcut(.defaultAction)
                 }
@@ -65,7 +65,7 @@ struct NotesDialog: View {
     @ViewBuilder private var list: some View {
         let shown = shown
         if shown.isEmpty {
-            Text(query.isEmpty ? "Aucune note dans cette catégorie." : "Aucune note ne correspond à « \(query.trimmingCharacters(in: .whitespaces)) ».")
+            Text(query.isEmpty ? L("Aucune note dans cette catégorie.") : L("Aucune note ne correspond à « \(query.trimmingCharacters(in: .whitespaces)) »."))
                 .foregroundStyle(Theme.text2)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 48)
@@ -104,7 +104,7 @@ struct NotesDialog: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityValue(isFolded ? "replié" : "déplié")
+            .accessibilityValue(isFolded ? L("replié") : L("déplié"))
             VStack(alignment: .leading, spacing: 0) {
                 if isFolded {
                     Text(items.map(\.release.version).joined(separator: " · "))
@@ -151,8 +151,8 @@ private struct ReleaseView: View {
                 Text(release.date)
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.text2)
-                if release.latest { ReleaseBadge(text: "Dernière", color: Theme.accent) }
-                if release.security { ReleaseBadge(text: "Sécurité", color: Theme.security) }
+                if release.latest { ReleaseBadge(text: L("Dernière"), color: Theme.accent) }
+                if release.security { ReleaseBadge(text: L("Sécurité"), color: Theme.security) }
                 Spacer(minLength: 8)
                 Text(release.engine)
                     .font(.system(size: 11))
@@ -172,7 +172,7 @@ private struct ReleaseView: View {
                             .padding(.leading, 4)
                             .padding(.trailing, -4)
                         if note.security {
-                            ReleaseBadge(text: "Sécurité", color: Theme.security)
+                            ReleaseBadge(text: L("Sécurité"), color: Theme.security)
                                 .padding(.trailing, 6)
                         }
                         Text(note.text)

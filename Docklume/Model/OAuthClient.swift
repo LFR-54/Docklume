@@ -25,9 +25,9 @@ struct OAuthClient: Equatable, Sendable {
     /// What is wrong with a Google key as typed, if anything.
     var googleError: String? {
         let key = trimmed
-        if key.id.isEmpty { return "Saisissez l'ID client." }
-        if !key.id.hasSuffix(".apps.googleusercontent.com") { return "L'ID client se termine par .apps.googleusercontent.com." }
-        if key.secret.isEmpty { return "Saisissez le code secret." }
+        if key.id.isEmpty { return L("Saisissez l'ID client.") }
+        if !key.id.hasSuffix(".apps.googleusercontent.com") { return L("L'ID client se termine par .apps.googleusercontent.com.") }
+        if key.secret.isEmpty { return L("Saisissez le code secret.") }
         return nil
     }
 
@@ -42,7 +42,7 @@ struct OAuthClient: Equatable, Sendable {
             let web: Client?
         }
         guard let file = try? JSONDecoder().decode(File.self, from: Data(contentsOf: url)), let client = file.installed ?? file.web else {
-            throw RcloneError.command("Ce fichier n'est pas une clé OAuth de Google Cloud.")
+            throw RcloneError.command(L("Ce fichier n'est pas une clé OAuth de Google Cloud."))
         }
         self.init(id: client.client_id, secret: client.client_secret)
     }

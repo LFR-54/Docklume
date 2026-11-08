@@ -8,19 +8,19 @@ struct ActivityPage: View {
         PageScroll {
             VStack(alignment: .leading, spacing: 0) {
                 stats
-                SectionTitle(text: "Débit de lecture")
+                SectionTitle(text: L("Débit de lecture"))
                 ThroughputChart(drives: store.drives, total: store.readHistory)
                     .frame(height: 150)
                     .padding(.horizontal, 12)
                     .padding(.top, 12)
                     .padding(.bottom, 8)
                     .card()
-                SectionTitle(text: "Lecteurs")
+                SectionTitle(text: L("Lecteurs"))
                 table
-                SectionTitle(text: "Envois")
+                SectionTitle(text: L("Envois"))
                 SettingsGroup {
                     if store.uploads.isEmpty {
-                        Text("Aucun envoi en cours.")
+                        Text(L("Aucun envoi en cours."))
                             .font(.system(size: 11))
                             .foregroundStyle(Theme.text2)
                             .padding(.horizontal, 12)
@@ -40,19 +40,19 @@ struct ActivityPage: View {
         let nfs = store.drives.filter { $0.isMounted && $0.settings.method == .nfs }.count
         let uploads = store.uploads.count
         return TileRow(spacing: 10) {
-            StatTile(label: "Lecture", value: Format.speed(store.totalRead)) {
-                StatSub(text: "Tous les lecteurs")
+            StatTile(label: L("Lecture"), value: Format.speed(store.totalRead)) {
+                StatSub(text: L("Tous les lecteurs"))
             }
-            StatTile(label: "Écriture", value: Format.speed(store.totalWrite)) {
-                StatSub(text: uploads == 0 ? "Aucun envoi en cours" : "\(Format.plural(uploads, "fichier")) en cours")
+            StatTile(label: L("Écriture"), value: Format.speed(store.totalWrite)) {
+                StatSub(text: uploads == 0 ? L("Aucun envoi en cours") : L("\(Format.plural(uploads, "fichier")) en cours"))
             }
-            StatTile(label: "Lecteurs montés", value: "\(store.mountedCount) sur \(store.drives.count)") {
-                StatSub(text: fuse > 0 ? "\(fuse) via macFUSE, \(nfs) via NFS" : "\(nfs) via NFS")
+            StatTile(label: L("Lecteurs montés"), value: L("\(store.mountedCount) sur \(store.drives.count)")) {
+                StatSub(text: fuse > 0 ? L("\(fuse) via macFUSE, \(nfs) via NFS") : L("\(nfs) via NFS"))
             }
-            StatTile(label: "Cache", value: Format.gigabytes(store.totalCacheBytes)) {
+            StatTile(label: L("Cache"), value: Format.gigabytes(store.totalCacheBytes)) {
                 LevelBar(fraction: store.totalCacheMaxGB > 0 ? Double(store.totalCacheBytes) / (Double(store.totalCacheMaxGB) * 1e9) : 0)
                     .padding(.top, 8)
-                StatSub(text: "sur \(store.totalCacheMaxGB) Go")
+                StatSub(text: L("sur \(store.totalCacheMaxGB) Go"))
             }
         }
     }
@@ -60,11 +60,11 @@ struct ActivityPage: View {
     private var table: some View {
         VStack(spacing: 0) {
             ColumnsLayout {
-                Text("Nom")
-                Text("État")
-                Text("Lecture").frame(maxWidth: .infinity, alignment: .trailing)
-                Text("Écriture").frame(maxWidth: .infinity, alignment: .trailing)
-                Text("Espace libre")
+                Text(L("Nom"))
+                Text(L("État"))
+                Text(L("Lecture")).frame(maxWidth: .infinity, alignment: .trailing)
+                Text(L("Écriture")).frame(maxWidth: .infinity, alignment: .trailing)
+                Text(L("Espace libre"))
             }
             .font(.system(size: 11))
             .foregroundStyle(Theme.text2)
@@ -115,7 +115,7 @@ private struct DriveTableRow: View {
                     ProviderTile(provider: drive.provider, size: 24)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(drive.name).lineLimit(1)
-                        Text("\(drive.provider.name) · \(drive.settings.method.rawValue)")
+                        Text("\(drive.provider.name) · \(drive.settings.method.title)")
                             .font(.system(size: 11))
                             .foregroundStyle(Theme.text2)
                             .lineLimit(1)
@@ -171,7 +171,7 @@ struct UploadRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             LevelBar(fraction: upload.progress)
                 .frame(width: 140)
-            Text(upload.speed > 0 ? Format.speed(upload.speed) : "En attente")
+            Text(upload.speed > 0 ? Format.speed(upload.speed) : L("En attente"))
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.text2)
                 .monospacedDigit()
@@ -210,7 +210,7 @@ struct ThroughputChart: View {
                 }
                 Text("-60 s").axisLabel().position(x: left + 14, y: size.height - 7)
                 Text("-30 s").axisLabel().position(x: (left + size.width - right) / 2, y: size.height - 7)
-                Text("maintenant").axisLabel().position(x: size.width - right - 27, y: size.height - 7)
+                Text(L("maintenant")).axisLabel().position(x: size.width - right - 27, y: size.height - 7)
                 area(size, maximum).fill(Theme.accentSoft)
                 line(size, maximum).stroke(Theme.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                 if let index = hoverIndex {
@@ -246,7 +246,7 @@ struct ThroughputChart: View {
             }
         }
         .accessibilityElement()
-        .accessibilityLabel("Débit de lecture total sur les 60 dernières secondes")
+        .accessibilityLabel(L("Débit de lecture total sur les 60 dernières secondes"))
         .accessibilityValue(Format.speed(total.last ?? 0))
     }
 
@@ -279,7 +279,7 @@ struct ThroughputChart: View {
     private func tooltip(_ index: Int) -> some View {
         let ago = total.count - 1 - index
         return VStack(alignment: .leading, spacing: 1) {
-            Text(ago == 0 ? "Maintenant" : "Il y a \(ago) s")
+            Text(ago == 0 ? L("Maintenant") : L("Il y a \(ago) s"))
                 .foregroundStyle(Theme.text2)
                 .padding(.bottom, 2)
             tooltipLine(total[index], "Total", strong: true)

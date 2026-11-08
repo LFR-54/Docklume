@@ -139,19 +139,19 @@ struct ConnectionDraft: Equatable {
         switch provider.kind {
         case .oauth:
             if let error = client?.googleError { errors[.client] = error }
-            if token == nil && !editing { errors[.signIn] = "Connectez-vous à \(provider.name) pour continuer." }
+            if token == nil && !editing { errors[.signIn] = L("Connectez-vous à \(provider.name) pour continuer.") }
         case .login:
-            require(email, .email, "Saisissez l'adresse e-mail.")
-            if !editing { require(password, .password, "Saisissez le mot de passe.") }
+            require(email, .email, L("Saisissez l'adresse e-mail."))
+            if !editing { require(password, .password, L("Saisissez le mot de passe.")) }
         case .s3:
-            require(endpoint, .endpoint, "Saisissez le point d'accès.")
-            require(bucket, .bucket, "Saisissez le nom du bucket.")
-            require(accessKey, .accessKey, "Saisissez la clé d'accès.")
-            if !editing { require(secretKey, .secretKey, "Saisissez la clé secrète.") }
+            require(endpoint, .endpoint, L("Saisissez le point d'accès."))
+            require(bucket, .bucket, L("Saisissez le nom du bucket."))
+            require(accessKey, .accessKey, L("Saisissez la clé d'accès."))
+            if !editing { require(secretKey, .secretKey, L("Saisissez la clé secrète.")) }
         case .server:
-            require(address, .address, "Saisissez l'adresse du serveur.")
+            require(address, .address, L("Saisissez l'adresse du serveur."))
         }
-        if encrypt { require(encryptionPassword, .encryptionPassword, "Saisissez une phrase secrète de chiffrement.") }
+        if encrypt { require(encryptionPassword, .encryptionPassword, L("Saisissez une phrase secrète de chiffrement.")) }
         return errors
     }
 

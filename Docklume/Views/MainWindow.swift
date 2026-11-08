@@ -33,6 +33,8 @@ struct MainWindow: View {
         .environment(\.liveResize, resizing)
         .overlay { DialogHost() }
         .overlay(alignment: .bottom) { ToastView() }
+        // Every text is looked up when drawn: a new language draws the window again, open dialog included.
+        .id(store.preferences.language)
         .background(WindowChrome { resizing = $0 })
         .ignoresSafeArea()
         .animation(.easeOut(duration: 0.15), value: app.overlay)
@@ -123,29 +125,29 @@ struct Sidebar: View {
                     Text("Docklume")
                         .font(.system(size: 21, weight: .bold))
                         .tracking(-0.21)
-                    Text("Moteur rclone \(store.engineRelease ?? "…")")
+                    Text(L("Moteur rclone \(store.engineRelease ?? "…")"))
                         .font(.system(size: 12.5))
                         .foregroundStyle(Theme.text2)
                 }
             }
             .padding(.horizontal, 4)
             .padding(.bottom, 22)
-            NavItem(title: "Lecteurs montés", symbol: "tile-server", selected: isDrives) {
+            NavItem(title: L("Lecteurs montés"), symbol: "tile-server", selected: isDrives) {
                 CountBadge(count: store.mountedCount)
             } action: {
                 app.page = .drives
             }
-            NavItem(title: "Activité", symbol: "waveform.path.ecg", selected: app.page == .activity) {
+            NavItem(title: L("Activité"), symbol: "waveform.path.ecg", selected: app.page == .activity) {
                 EmptyView()
             } action: {
                 app.page = .activity
             }
-            NavItem(title: "Ajouter un lecteur", symbol: "plus.circle", selected: false) {
+            NavItem(title: L("Ajouter un lecteur"), symbol: "plus.circle", selected: false) {
                 EmptyView()
             } action: {
                 app.overlay = .add(provider: "webdav")
             }
-            NavItem(title: "Paramètres", symbol: "gearshape", selected: app.page == .settings) {
+            NavItem(title: L("Paramètres"), symbol: "gearshape", selected: app.page == .settings) {
                 EmptyView()
             } action: {
                 app.page = .settings
@@ -171,16 +173,16 @@ struct Sidebar: View {
                 Text("Docklume")
                     .font(.system(size: 15, weight: .semibold))
                     .lineBox(15, 1.35)
-                Text("Version \(Preferences.appVersion)")
+                Text(L("Version \(Preferences.appVersion)"))
                     .font(.system(size: 12.5))
                     .foregroundStyle(Theme.text2)
                     .lineBox(12.5, 1.35)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            FootButton(symbol: "newspaper", label: "Notes de version", showsDot: store.preferences.notesSeenVersion != Preferences.appVersion) {
+            FootButton(symbol: "newspaper", label: L("Notes de version"), showsDot: store.preferences.notesSeenVersion != Preferences.appVersion) {
                 app.overlay = .notes
             }
-            FootButton(symbol: "info.circle", label: "À propos de Docklume", showsDot: false) {
+            FootButton(symbol: "info.circle", label: L("À propos de Docklume"), showsDot: false) {
                 app.overlay = .about
             }
         }
@@ -262,7 +264,7 @@ private struct FootButton: View {
         }
         .buttonStyle(.plain)
         .help(label)
-        .accessibilityLabel(showsDot ? "\(label), nouvelle version installée" : label)
+        .accessibilityLabel(showsDot ? L("\(label), nouvelle version installée") : label)
     }
 }
 
@@ -311,11 +313,11 @@ struct PageHeader: View {
     @ViewBuilder private var titles: some View {
         switch app.page {
         case .drives:
-            HeaderTitles(title: "Lecteurs montés", subtitle: drivesSubtitle)
+            HeaderTitles(title: L("Lecteurs montés"), subtitle: drivesSubtitle)
         case .activity:
-            HeaderTitles(title: "Activité", subtitle: "Débit et transferts des 60 dernières secondes")
+            HeaderTitles(title: L("Activité"), subtitle: L("Débit et transferts des 60 dernières secondes"))
         case .settings:
-            HeaderTitles(title: "Paramètres", subtitle: "Valeurs par défaut des nouveaux lecteurs et comportement de l'app.")
+            HeaderTitles(title: L("Paramètres"), subtitle: L("Valeurs par défaut des nouveaux lecteurs et comportement de l'app."))
         case .drive(let id):
             if let drive = store.drive(id) {
                 HStack(spacing: 10) {
@@ -328,7 +330,7 @@ struct PageHeader: View {
                     }
                     .buttonStyle(.plain)
                     .keyboardShortcut("[", modifiers: .command)
-                    .accessibilityLabel("Retour aux lecteurs")
+                    .accessibilityLabel(L("Retour aux lecteurs"))
                     VStack(alignment: .leading, spacing: 1) {
                         Text(drive.name)
                             .font(.system(size: 20, weight: .semibold))
@@ -349,20 +351,20 @@ struct PageHeader: View {
         switch app.page {
         case .drives:
             HStack(spacing: 10) {
-                ToolbarButton(title: "Ajouter", symbol: "plus.circle", tint: Theme.accent) { app.overlay = .add(provider: "webdav") }
-                ToolbarButton(title: "Paramètres", symbol: "gearshape") { app.page = .settings }
-                SearchField(text: Bindable(app).query, placeholder: "Rechercher…", width: compact ? 150 : 210)
+                ToolbarButton(title: L("Ajouter"), symbol: "plus.circle", tint: Theme.accent) { app.overlay = .add(provider: "webdav") }
+                ToolbarButton(title: L("Paramètres"), symbol: "gearshape") { app.page = .settings }
+                SearchField(text: Bindable(app).query, placeholder: L("Rechercher…"), width: compact ? 150 : 210)
             }
         case .activity:
-            ToolbarButton(title: "Tout démonter", symbol: "eject") {
+            ToolbarButton(title: L("Tout démonter"), symbol: "eject") {
                 let unmountAll: @MainActor () -> Void = {
                     Task {
                         await store.unmountAll()
-                        app.show("Tous les lecteurs sont démontés")
+                        app.show(L("Tous les lecteurs sont démontés"))
                     }
                 }
                 guard store.pendingUploadCount > 0 else { return unmountAll() }
-                app.confirm("Tout démonter ?", message: DriveStore.unsentMessage(store.pendingUploadCount), confirm: "Démonter", action: unmountAll)
+                app.confirm(L("Tout démonter ?"), message: DriveStore.unsentMessage(store.pendingUploadCount), confirm: L("Démonter"), action: unmountAll)
             }
             .disabled(store.mountedCount == 0)
         case .settings:
@@ -371,8 +373,8 @@ struct PageHeader: View {
             if let drive = store.drive(id) {
                 let actions = DriveActions(store: store, app: app)
                 HStack(spacing: 10) {
-                    ToolbarButton(title: "Afficher dans le Finder", symbol: "folder") { actions.run(.finder, drive) }
-                    ToolbarButton(title: drive.isMounted || drive.state == .mounting ? "Démonter" : "Monter", symbol: "eject") {
+                    ToolbarButton(title: L("Afficher dans le Finder"), symbol: "folder") { actions.run(.finder, drive) }
+                    ToolbarButton(title: drive.isMounted || drive.state == .mounting ? L("Démonter") : L("Monter"), symbol: "eject") {
                         actions.run(.mount, drive)
                     }
                     .disabled(drive.state == .unmounting)
@@ -386,7 +388,7 @@ struct PageHeader: View {
                     .buttonStyle(.plain)
                     .menuIndicator(.hidden)
                     .fixedSize()
-                    .accessibilityLabel("Autres actions")
+                    .accessibilityLabel(L("Autres actions"))
                 }
             }
         }
@@ -394,7 +396,8 @@ struct PageHeader: View {
 
     private var drivesSubtitle: String {
         let speed = store.totalRead + store.totalWrite
-        return "\(Format.plural(store.mountedCount, "monté")) sur \(store.drives.count) · \(speed >= Format.idleThreshold ? Format.speed(speed) : "aucun transfert")"
+        let mounted = store.mountedCount > 1 ? L("\(store.mountedCount) montés sur \(store.drives.count)") : L("\(store.mountedCount) monté sur \(store.drives.count)")
+        return "\(mounted) · \(speed >= Format.idleThreshold ? Format.speed(speed) : L("aucun transfert"))"
     }
 }
 

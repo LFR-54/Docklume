@@ -34,10 +34,24 @@ final class Preferences {
                 loginItemProblem = error.localizedDescription
             }
             if openAtLogin, service.status == .requiresApproval {
-                loginItemProblem = "En attente de votre accord dans Réglages Système."
+                loginItemProblem = L("En attente de votre accord dans Réglages Système.")
                 SMAppService.openSystemSettingsLoginItems()
             }
             openAtLogin = service.status == .enabled
+        }
+    }
+    /// The app's language; the windows change at once. Also saved as the app's own AppleLanguages, so that the menus
+    /// macOS draws follow at the next launch; the system language removes it, leaving macOS's choice, including the
+    /// one made for Docklume in Réglages Système › Général › Langue et région.
+    var language: AppLanguage {
+        didSet {
+            defaults.set(language.rawValue, forKey: "language")
+            if language == .system {
+                defaults.removeObject(forKey: "AppleLanguages")
+            } else {
+                defaults.set([language.rawValue], forKey: "AppleLanguages")
+            }
+            Lang.use(language)
         }
     }
     /// Why the login item is off although it was turned on.
@@ -62,6 +76,9 @@ final class Preferences {
         showNotesAfterUpdate = defaults.bool(forKey: "showNotesAfterUpdate")
         notesSeenVersion = defaults.string(forKey: "notesSeenVersion")
         christmas = defaults.string(forKey: "christmas").flatMap(ChristmasTheme.init) ?? .automatic
+        let language = defaults.string(forKey: "language").flatMap(AppLanguage.init) ?? .system
+        self.language = language
+        Lang.use(language)
         self.openAtLogin = openAtLogin ?? (SMAppService.mainApp.status == .enabled)
     }
 
@@ -84,6 +101,15 @@ enum ChristmasTheme: String, CaseIterable {
     case automatic = "Automatique"
     case on = "Activé"
     case off = "Désactivé"
+
+    /// The raw value is stored in the settings; this is what the app shows.
+    var title: String {
+        switch self {
+        case .automatic: L("Automatique")
+        case .on: L("Activé")
+        case .off: L("Désactivé")
+        }
+    }
 
     /// The automatic theme runs from the 1st of December to Epiphany.
     func isOn(_ date: Date, calendar: Calendar = .current) -> Bool {

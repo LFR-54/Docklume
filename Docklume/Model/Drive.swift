@@ -13,11 +13,20 @@ enum Profile: String, Codable, CaseIterable {
     case documents = "Documents"
     case backup = "Sauvegarde"
 
+    /// The raw value is stored in drives.json; this is what the app shows.
+    var title: String {
+        switch self {
+        case .streaming: "Streaming"
+        case .documents: "Documents"
+        case .backup: L("Sauvegarde")
+        }
+    }
+
     var hint: String {
         switch self {
-        case .streaming: "Lecture anticipée et lectures parallèles. Pour Emby, Plex, Jellyfin."
-        case .documents: "Fichiers mis en cache à l'ouverture, écritures envoyées en arrière-plan."
-        case .backup: "Cache vidé cinq minutes après usage. Pour les copies volumineuses."
+        case .streaming: L("Lecture anticipée et lectures parallèles. Pour Emby, Plex, Jellyfin.")
+        case .documents: L("Fichiers mis en cache à l'ouverture, écritures envoyées en arrière-plan.")
+        case .backup: L("Cache vidé cinq minutes après usage. Pour les copies volumineuses.")
         }
     }
 }
@@ -26,12 +35,15 @@ enum MountMethod: String, Codable, CaseIterable {
     case macFUSE = "macFUSE"
     case nfs = "NFS intégré"
 
+    /// The raw value is stored in drives.json; this is what the app shows.
+    var title: String { self == .macFUSE ? "macFUSE" : L("NFS intégré") }
+
     var hint: String {
         switch self {
         case .macFUSE: MacFUSE.version == nil
-            ? "macFUSE n'est pas installé sur ce Mac."
-            : "Extension noyau. Les fichiers lus ne sont pas copiés sur le disque, sauf en profil Documents."
-        case .nfs: "Client NFS de macOS, aucune installation. Les fichiers lus sont copiés dans le cache."
+            ? L("macFUSE n'est pas installé sur ce Mac.")
+            : L("Extension noyau. Les fichiers lus ne sont pas copiés sur le disque, sauf en profil Documents.")
+        case .nfs: L("Client NFS de macOS, aucune installation. Les fichiers lus sont copiés dans le cache.")
         }
     }
 
@@ -153,11 +165,11 @@ final class Drive: Identifiable {
 
     var status: (kind: StatusKind, label: String) {
         switch state {
-        case .mounted: writeSpeed >= Format.idleThreshold ? (.busy, "Envoi en cours") : (.on, "Monté")
-        case .mounting: (.busy, "Montage…")
-        case .unmounting: (.busy, "Démontage…")
-        case .failed: (.error, "Erreur")
-        case .unmounted: (.off, "Non monté")
+        case .mounted: writeSpeed >= Format.idleThreshold ? (.busy, L("Envoi en cours")) : (.on, L("Monté"))
+        case .mounting: (.busy, L("Montage…"))
+        case .unmounting: (.busy, L("Démontage…"))
+        case .failed: (.error, L("Erreur"))
+        case .unmounted: (.off, L("Non monté"))
         }
     }
 

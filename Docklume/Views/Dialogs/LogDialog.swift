@@ -8,6 +8,8 @@ struct LogDialog: View {
         case warnings = "Avertissements"
         case errors = "Erreurs"
 
+        var title: String { L(Localized(dynamic: rawValue)) }
+
         func includes(_ level: String) -> Bool {
             switch self {
             case .all: true
@@ -25,16 +27,16 @@ struct LogDialog: View {
     var body: some View {
         ModalSurface(width: 780) {
             VStack(spacing: 0) {
-                ModalHead(title: "Journal de \(drive.name)",
-                          subtitle: "Sortie de rclone, niveau INFO. Les mots de passe et jetons sont masqués.", showsLogo: false) {
+                ModalHead(title: L("Journal de \(drive.name)"),
+                          subtitle: L("Sortie de rclone, niveau INFO. Les mots de passe et jetons sont masqués."), showsLogo: false) {
                     app.overlay = nil
                 }
                 HStack(spacing: 10) {
-                    SegmentedControl(selection: $level, options: Level.allCases, title: \.rawValue)
+                    SegmentedControl(selection: $level, options: Level.allCases, title: \.title)
                     Spacer()
-                    Button("Copier", action: copy)
+                    Button(L("Copier"), action: copy)
                         .buttonStyle(PushButtonStyle())
-                    Button("Afficher dans le Finder") { NSWorkspace.shared.activateFileViewerSelecting([drive.logFile]) }
+                    Button(L("Afficher dans le Finder")) { NSWorkspace.shared.activateFileViewerSelecting([drive.logFile]) }
                         .buttonStyle(PushButtonStyle())
                 }
                 .padding(.horizontal, 22)
@@ -42,7 +44,7 @@ struct LogDialog: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         if visible.isEmpty {
-                            Text(lines.isEmpty ? "Le journal est vide : le lecteur n'a pas encore été monté." : "Aucune ligne à ce niveau.")
+                            Text(lines.isEmpty ? L("Le journal est vide : le lecteur n'a pas encore été monté.") : L("Aucune ligne à ce niveau."))
                                 .font(.system(size: 11.5, design: .monospaced))
                                 .foregroundStyle(Theme.text2)
                                 .padding(.leading, 156)
@@ -68,7 +70,7 @@ struct LogDialog: View {
                 .padding(.horizontal, 22)
                 HStack {
                     Spacer()
-                    Button("Fermer") { app.overlay = nil }
+                    Button(L("Fermer")) { app.overlay = nil }
                         .buttonStyle(PushButtonStyle.largePrimary)
                         .keyboardShortcut(.defaultAction)
                 }
@@ -101,6 +103,6 @@ struct LogDialog: View {
         let text = visible.map { "\($0.time) \($0.level) \($0.message)" }.joined(separator: "\n")
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
-        app.show("\(Format.plural(visible.count, "ligne")) copiée\(visible.count > 1 ? "s" : "")")
+        app.show(visible.count > 1 ? L("\(visible.count) lignes copiées") : L("\(visible.count) ligne copiée"))
     }
 }

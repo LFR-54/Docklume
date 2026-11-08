@@ -71,6 +71,22 @@ encore faites.
   de `rclone.conf` sont importés en lecture seule ; ceux créés par l'app y sont écrits et supprimés avec leur dernier
   lecteur.
 
+## Langues
+
+- L'app est écrite en français et traduite en anglais. Tout texte affiché passe par `L("…")` (`Model/Language.swift`),
+  qui donne l'anglais de `Model/English.swift` ; la clé est le texte français avec `%@` pour chaque valeur et `%%`
+  pour un signe pour cent. Un texte qui contient un `Text` mis en forme passe par `Text(composing:)`.
+- Réglage `language` des Paramètres (Système, 🇫🇷 Français, 🇬🇧 English) : la fenêtre et le panneau se redessinent
+  aussitôt (`.id` sur la langue), sans relance ni démontage. Il est aussi écrit en `AppleLanguages` de l'app, pour
+  les menus de macOS au lancement suivant ; Système le retire.
+- Pas d'accord par interpolation (`\(n > 1 ? "s" : "")`) : une phrase au singulier et une au pluriel, ou
+  `Format.plural`. Les valeurs enregistrées (`Profile`, `MountMethod`, `ChristmasTheme`) gardent leur `rawValue`
+  français et s'affichent par `title`. Unités : Mo/Go/To en français, MB/GB/TB en anglais (`Format.unit`).
+- Après un texte ajouté ou changé : `python3 -I tools/l10n/check.py` liste les textes sans anglais, les entrées en
+  double (plantage au lancement) et les valeurs qui ne correspondent pas.
+- GitHub : `README.md` en anglais, `README.fr.md` en français ; site en anglais dans `docs/`, en français dans
+  `docs/fr/` ; `confidentialite.html` reste à cette adresse (écran de consentement Google), `privacy.html` en anglais.
+
 ## Patches rclone (`rclone-patches/`)
 
 | Patch | Rôle |
@@ -153,7 +169,8 @@ remesurer. L'essentiel :
 - `tools/outage/run.sh reconnect|wait` : coupure simulée sur un montage macFUSE local ; la lecture repart en environ
   1,5 s avec `core/reconnect`, reste figée sans.
 - `tools/screenshots/render.sh` : refait `docs/images` (README et site) avec des comptes de démo et liste les images
-  qui ont changé. Copier ensuite les images voulues dans `docs/images`. La version affichée vient de l'app rendue :
+  qui ont changé. Copier ensuite les images voulues dans `docs/images`, en anglais (`DOCKLUME_LANG=en`, par défaut),
+  et dans `docs/images/fr` (`DOCKLUME_LANG=fr`) ; `DOCKLUME_ONLY=settings,notes` ne rend que ces écrans. La version affichée vient de l'app rendue :
   `DOCKLUME_APP=<Release.app>` rend depuis la Release, sans recompiler l'app Debug en service. La hauteur de fenêtre
   sort parfois 34 pt plus grande : le script garde le bon tirage, et le relancer suffit si une image change de taille.
   Un rendu hors écran ne doit pas fixer la hauteur de `MainWindow` par `.frame` : le bas de la fenêtre sort alors du

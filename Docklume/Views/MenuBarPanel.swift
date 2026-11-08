@@ -15,11 +15,11 @@ struct MenuBarPanel: View {
         VStack(alignment: .leading, spacing: 0) {
             head
             rates
-            section("Lecteurs", detail: "\(store.drives.count)")
+            section(L("Lecteurs"), detail: "\(store.drives.count)")
             driveList
             let uploads = store.uploads.filter { $0.upload.bytes > 0 }
             if !uploads.isEmpty {
-                section("Envois", detail: Format.speed(store.totalWrite))
+                section(L("Envois"), detail: Format.speed(store.totalWrite))
                 ForEach(uploads, id: \.upload.id) { item in
                     HStack(spacing: 9) {
                         ProviderTile(provider: item.drive.provider, size: 20)
@@ -38,15 +38,16 @@ struct MenuBarPanel: View {
                 }
             }
             separator
-            PanelItem(title: "Ouvrir Docklume") { open(.drives) }
+            PanelItem(title: L("Ouvrir Docklume")) { open(.drives) }
             separator
-            PanelItem(title: "Quitter Docklume", shortcut: "⌘Q", action: quit)
+            PanelItem(title: L("Quitter Docklume"), shortcut: "⌘Q", action: quit)
         }
         .font(.system(size: 13))
         .foregroundStyle(Theme.text)
         .padding(6)
         .frame(width: 344)
         .environment(\.christmas, store.preferences.isChristmas)
+        .id(store.preferences.language)
     }
 
     private var head: some View {
@@ -54,17 +55,18 @@ struct MenuBarPanel: View {
             AppLogo(size: 34)
             VStack(alignment: .leading, spacing: 0) {
                 Text("Docklume").fontWeight(.semibold).lineBox(13)
-                Text("\(Format.plural(store.mountedCount, "monté")) sur \(Format.plural(store.drives.count, "lecteur"))")
+                Text(store.mountedCount > 1 ? L("\(store.mountedCount) montés sur \(Format.plural(store.drives.count, "lecteur"))")
+                                             : L("\(store.mountedCount) monté sur \(Format.plural(store.drives.count, "lecteur"))"))
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.text2)
                     .lineBox(11)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            RoundButton(symbol: "plus", label: "Ajouter un lecteur") {
+            RoundButton(symbol: "plus", label: L("Ajouter un lecteur")) {
                 open(nil)
                 app.overlay = .add(provider: "webdav")
             }
-            RoundButton(symbol: "gearshape", label: "Paramètres") { open(.settings) }
+            RoundButton(symbol: "gearshape", label: L("Paramètres")) { open(.settings) }
         }
         .padding(.top, 8)
         .padding(.leading, 8)
@@ -145,10 +147,10 @@ struct MenuBarPanel: View {
         }
         open(nil)
         let pending = store.pendingUploadCount
-        app.confirm("Quitter Docklume ?",
-                    message: "\(Format.plural(count, "lecteur")) monté\(count > 1 ? "s seront démontés" : " sera démonté"). "
-                        + (pending > 0 ? DriveStore.unsentMessage(pending) : "Les envois non terminés reprendront au prochain montage."),
-                    confirm: "Quitter") {
+        app.confirm(L("Quitter Docklume ?"),
+                    message: (count > 1 ? L("\(count) lecteurs montés seront démontés.") : L("\(count) lecteur monté sera démonté.")) + " "
+                        + (pending > 0 ? DriveStore.unsentMessage(pending) : L("Les envois non terminés reprendront au prochain montage.")),
+                    confirm: L("Quitter")) {
             app.quitConfirmed = true
             NSApp.terminate(nil)
         }
@@ -185,7 +187,7 @@ private struct PanelDriveRow: View {
                     } else if drive.isBusy {
                         ProgressView().controlSize(.small)
                     } else {
-                        Text("Monter")
+                        Text(L("Monter"))
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(hovering ? .white : Theme.text)
                             .padding(.horizontal, 10)
@@ -201,21 +203,21 @@ private struct PanelDriveRow: View {
             }
         }
         .buttonStyle(.plain)
-        .help(drive.isMounted ? "Afficher dans le Finder" : "Monter")
+        .help(drive.isMounted ? L("Afficher dans le Finder") : L("Monter"))
     }
 
     private var line: String {
         switch drive.state {
-        case .unmounted: return "Non monté"
-        case .mounting: return "Montage…"
-        case .unmounting: return "Démontage…"
-        case .failed: return "Échec du montage"
+        case .unmounted: return L("Non monté")
+        case .mounting: return L("Montage…")
+        case .unmounting: return L("Démontage…")
+        case .failed: return L("Échec du montage")
         case .mounted:
             let reading = drive.readSpeed >= Format.idleThreshold ? "↓ \(Format.speed(drive.readSpeed))" : ""
             let writing = drive.writeSpeed >= Format.idleThreshold ? "↑ \(Format.speed(drive.writeSpeed))" : ""
             let activity = [reading, writing].filter { !$0.isEmpty }.joined(separator: " ")
-            let free = SpaceLevel(drive.space).free.map { " · \(Format.capacity($0)) libres" } ?? ""
-            return (activity.isEmpty ? "Inactif" : activity) + free
+            let free = SpaceLevel(drive.space).free.map { L(" · \(Format.capacity($0)) libres") } ?? ""
+            return (activity.isEmpty ? L("Inactif") : activity) + free
         }
     }
 }
@@ -285,8 +287,8 @@ struct ThroughputCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: 12) {
-                figure("Lecture", symbol: "arrow.down", value: read, color: Theme.accent)
-                figure("Écriture", symbol: "arrow.up", value: write, color: Theme.upload)
+                figure(L("Lecture"), symbol: "arrow.down", value: read, color: Theme.accent)
+                figure(L("Écriture"), symbol: "arrow.up", value: write, color: Theme.upload)
             }
             chart
                 .frame(height: chartHeight + labelBand)
@@ -294,7 +296,7 @@ struct ThroughputCard: View {
             HStack {
                 Text("-60 s")
                 Spacer()
-                Text("maintenant")
+                Text(L("maintenant"))
             }
             .font(.system(size: 10))
             .foregroundStyle(Theme.text3)
@@ -305,8 +307,8 @@ struct ThroughputCard: View {
         .padding(.bottom, 8)
         .card()
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Débit de la dernière minute")
-        .accessibilityValue("Lecture \(Format.speed(read)), écriture \(Format.speed(write))")
+        .accessibilityLabel(L("Débit de la dernière minute"))
+        .accessibilityValue(L("Lecture \(Format.speed(read)), écriture \(Format.speed(write))"))
     }
 
     /// The series' line key, its name and its current value.
@@ -422,10 +424,10 @@ struct ThroughputCard: View {
     private func tooltip(_ index: Int) -> some View {
         let ago = readHistory.count - 1 - index
         return VStack(alignment: .leading, spacing: 2) {
-            Text(ago == 0 ? "Maintenant" : "Il y a \(ago) s")
+            Text(ago == 0 ? L("Maintenant") : L("Il y a \(ago) s"))
                 .foregroundStyle(Theme.text2)
-            tooltipLine(value(readHistory, index), "Lecture", Theme.accent)
-            tooltipLine(value(writeHistory, index), "Écriture", Theme.upload)
+            tooltipLine(value(readHistory, index), L("Lecture"), Theme.accent)
+            tooltipLine(value(writeHistory, index), L("Écriture"), Theme.upload)
         }
         .font(.system(size: 11))
         .padding(.horizontal, 8)

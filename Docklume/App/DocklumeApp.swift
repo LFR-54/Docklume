@@ -16,14 +16,14 @@ struct DocklumeApp: App {
         .defaultSize(width: 1120, height: 760)
         .commands {
             CommandGroup(replacing: .appInfo) {
-                Button("À propos de Docklume") { delegate.app.overlay = .about }
+                Button(L("À propos de Docklume")) { delegate.app.overlay = .about }
             }
             CommandGroup(replacing: .newItem) {
-                Button("Ajouter un lecteur…") { delegate.app.overlay = .add(provider: "webdav") }
+                Button(L("Ajouter un lecteur…")) { delegate.app.overlay = .add(provider: "webdav") }
                     .keyboardShortcut("n")
             }
             CommandGroup(replacing: .help) {
-                Button("Notes de version") { delegate.app.overlay = .notes }
+                Button(L("Notes de version")) { delegate.app.overlay = .notes }
             }
         }
 
@@ -84,9 +84,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         if formerNameRunning {
             let alert = NSAlert()
-            alert.messageText = "CloudShelf est encore ouvert"
-            alert.informativeText = "Docklume remplace CloudShelf et reprend ses lecteurs, ses réglages et ses caches. Quittez CloudShelf, puis rouvrez Docklume."
-            alert.addButton(withTitle: "Quitter Docklume")
+            alert.messageText = L("CloudShelf est encore ouvert")
+            alert.informativeText = L("Docklume remplace CloudShelf et reprend ses lecteurs, ses réglages et ses caches. Quittez CloudShelf, puis rouvrez Docklume.")
+            alert.addButton(withTitle: L("Quitter Docklume"))
             NSApp.activate()
             alert.runModal()
             NSApp.terminate(nil)
@@ -149,10 +149,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // ⌘Q skips the panel's confirmation: files still being uploaded would only leave at the next mount.
         if store.pendingUploadCount > 0, !app.quitConfirmed {
             let alert = NSAlert()
-            alert.messageText = "Quitter Docklume ?"
+            alert.messageText = L("Quitter Docklume ?")
             alert.informativeText = DriveStore.unsentMessage(store.pendingUploadCount)
-            alert.addButton(withTitle: "Quitter")
-            alert.addButton(withTitle: "Annuler")
+            alert.addButton(withTitle: L("Quitter"))
+            alert.addButton(withTitle: L("Annuler"))
             guard alert.runModal() == .alertFirstButtonReturn else { return .terminateCancel }
         }
         Task {

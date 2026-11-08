@@ -30,9 +30,9 @@ struct ConnectionDialog: View {
     var body: some View {
         ModalSurface(width: 880) {
             VStack(spacing: 0) {
-                ModalHead(title: editing.map { "Modifier « \($0.name) »" } ?? "Ajouter un nouveau lecteur",
-                          subtitle: editing == nil ? "Montez un stockage cloud, un NAS ou un serveur comme un disque dans le Finder."
-                                                   : "Les changements s'appliquent à l'enregistrement : un volume monté est remonté.",
+                ModalHead(title: editing.map { L("Modifier « \($0.name) »") } ?? L("Ajouter un nouveau lecteur"),
+                          subtitle: editing == nil ? L("Montez un stockage cloud, un NAS ou un serveur comme un disque dans le Finder.")
+                                                   : L("Les changements s'appliquent à l'enregistrement : un volume monté est remonté."),
                           close: close)
                 HStack(alignment: .top, spacing: 14) {
                     providerList
@@ -90,7 +90,7 @@ struct ConnectionDialog: View {
                     }
                 }
                 .padding(.bottom, 18)
-                row("Nom du volume", error: errors[.name]) {
+                row(L("Nom du volume"), error: errors[.name]) {
                     FieldBox(text: $draft.name, invalid: errors[.name] != nil).focused($focus, equals: .name)
                 }
                 fields
@@ -101,7 +101,7 @@ struct ConnectionDialog: View {
                         Image(systemName: "chevron.down")
                             .font(.system(size: 11, weight: .semibold))
                             .rotationEffect(.degrees(advancedOpen ? 0 : -90))
-                        Text("Options avancées").fontWeight(.medium)
+                        Text(L("Options avancées")).fontWeight(.medium)
                     }
                     .padding(.vertical, 6)
                     .contentShape(Rectangle())
@@ -122,14 +122,14 @@ struct ConnectionDialog: View {
         switch provider.kind {
         case .oauth:
             if provider.type == "drive" && editing == nil { googleKey }
-            row("Compte", error: errors[.signIn]) {
+            row(L("Compte"), error: errors[.signIn]) {
                 if draft.token != nil || (editing != nil && draft.authorizedAccount != nil) {
                     HStack(spacing: 10) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 15))
                             .foregroundStyle(Theme.green)
-                        Text(draft.authorizedAccount ?? "Compte \(provider.name)").lineLimit(1)
-                        Button("Changer de compte…", action: startSignIn)
+                        Text(draft.authorizedAccount ?? L("Compte \(provider.name)")).lineLimit(1)
+                        Button(L("Changer de compte…"), action: startSignIn)
                             .buttonStyle(PushButtonStyle())
                             .disabled(signIn != nil)
                     }
@@ -139,48 +139,48 @@ struct ConnectionDialog: View {
                         if signIn != nil {
                             HStack(spacing: 6) {
                                 ProgressView().controlSize(.small)
-                                Text("En attente du navigateur…")
+                                Text(L("En attente du navigateur…"))
                             }
                         } else {
-                            Text("Se connecter à \(provider.name)…")
+                            Text(L("Se connecter à \(provider.name)…"))
                         }
                     }
                     .buttonStyle(PushButtonStyle(height: 30))
                 }
             }
             if draft.token == nil && editing == nil {
-                Text("Votre navigateur s'ouvre pour autoriser Docklume.")
+                Text(L("Votre navigateur s'ouvre pour autoriser Docklume."))
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.text2)
                     .padding(.leading, 142)
                     .padding(.bottom, 10)
             }
         case .login:
-            row("Adresse e-mail", error: errors[.email]) {
+            row(L("Adresse e-mail"), error: errors[.email]) {
                 FieldBox(text: $draft.email, placeholder: "nom@exemple.fr", invalid: errors[.email] != nil).focused($focus, equals: .email)
             }
-            row("Mot de passe", error: errors[.password]) {
-                FieldBox(text: $draft.password, placeholder: editing == nil ? "Mot de passe" : "Inchangé", secure: true,
+            row(L("Mot de passe"), error: errors[.password]) {
+                FieldBox(text: $draft.password, placeholder: editing == nil ? L("Mot de passe") : L("Inchangé"), secure: true,
                          invalid: errors[.password] != nil).focused($focus, equals: .password)
             }
-            row("Code 2FA") { FieldBox(text: $draft.twoFactor, placeholder: "Facultatif") }
+            row(L("Code 2FA")) { FieldBox(text: $draft.twoFactor, placeholder: L("Facultatif")) }
         case .s3:
-            row("Point d'accès", error: errors[.endpoint]) {
+            row(L("Point d'accès"), error: errors[.endpoint]) {
                 FieldBox(text: $draft.endpoint, placeholder: "https://s3.eu-central-1.amazonaws.com", invalid: errors[.endpoint] != nil)
                     .focused($focus, equals: .endpoint)
             }
             row("Bucket", error: errors[.bucket]) {
                 FieldBox(text: $draft.bucket, placeholder: "mon-bucket", invalid: errors[.bucket] != nil).focused($focus, equals: .bucket)
             }
-            row("Clé d'accès", error: errors[.accessKey]) {
+            row(L("Clé d'accès"), error: errors[.accessKey]) {
                 FieldBox(text: $draft.accessKey, placeholder: "AKIA…", invalid: errors[.accessKey] != nil).focused($focus, equals: .accessKey)
             }
-            row("Clé secrète", error: errors[.secretKey]) {
-                FieldBox(text: $draft.secretKey, placeholder: editing == nil ? "Clé secrète" : "Inchangée", secure: true,
+            row(L("Clé secrète"), error: errors[.secretKey]) {
+                FieldBox(text: $draft.secretKey, placeholder: editing == nil ? L("Clé secrète") : L("Inchangée"), secure: true,
                          invalid: errors[.secretKey] != nil).focused($focus, equals: .secretKey)
             }
         case .server:
-            row("Adresse", error: errors[.address]) {
+            row(L("Adresse"), error: errors[.address]) {
                 HStack(spacing: 8) {
                     FieldBox(text: $draft.address, placeholder: provider.hostPlaceholder, invalid: errors[.address] != nil)
                         .focused($focus, equals: .address)
@@ -188,21 +188,21 @@ struct ConnectionDialog: View {
                     FieldBox(text: $draft.port).frame(width: 80).accessibilityLabel("Port")
                 }
             }
-            row("Chemin d'accès") { FieldBox(text: $draft.path, placeholder: "Chemin distant (facultatif)") }
-            row("Compte") {
-                FieldBox(text: $draft.user, placeholder: "Nom d'utilisateur").disabled(draft.anonymous)
+            row(L("Chemin d'accès")) { FieldBox(text: $draft.path, placeholder: L("Chemin distant (facultatif)")) }
+            row(L("Compte")) {
+                FieldBox(text: $draft.user, placeholder: L("Nom d'utilisateur")).disabled(draft.anonymous)
             }
-            row("Mot de passe") {
-                FieldBox(text: $draft.password, placeholder: editing == nil ? "Mot de passe" : "Inchangé", secure: true).disabled(draft.anonymous)
+            row(L("Mot de passe")) {
+                FieldBox(text: $draft.password, placeholder: editing == nil ? L("Mot de passe") : L("Inchangé"), secure: true).disabled(draft.anonymous)
             }
-            check("Anonyme", $draft.anonymous)
+            check(L("Anonyme"), $draft.anonymous)
                 .padding(.leading, 142)
         }
     }
 
     /// Before the sign-in, since the token must come from the key the drive keeps.
     @ViewBuilder private var googleKey: some View {
-        check("Utiliser ma propre clé Google", Binding { draft.client != nil } set: { draft.client = $0 ? OAuthClient() : nil })
+        check(L("Utiliser ma propre clé Google"), Binding { draft.client != nil } set: { draft.client = $0 ? OAuthClient() : nil })
             .padding(.leading, 142)
             .padding(.top, -4)
             .padding(.bottom, draft.client == nil ? 6 : 4)
@@ -220,15 +220,15 @@ struct ConnectionDialog: View {
 
     private var advanced: some View {
         VStack(alignment: .leading, spacing: 0) {
-            row("Profil") {
-                SegmentedControl(selection: $draft.profile, options: Profile.allCases, title: \.rawValue)
+            row(L("Profil")) {
+                SegmentedControl(selection: $draft.profile, options: Profile.allCases, title: \.title)
             }
-            row("Méthode") {
-                let method = PopupButton(selection: $draft.method, options: MountMethod.allCases, title: \.rawValue, isEnabled: \.isAvailable)
+            row(L("Méthode")) {
+                let method = PopupButton(selection: $draft.method, options: MountMethod.allCases, title: \.title, isEnabled: \.isAvailable)
                 let timeout = HStack(spacing: 8) {
-                    Text("Délai d'expiration")
-                    FieldBox(text: $draft.timeout).frame(width: 56).accessibilityLabel("Délai d'expiration")
-                    Text("secondes")
+                    Text(L("Délai d'expiration"))
+                    FieldBox(text: $draft.timeout).frame(width: 56).accessibilityLabel(L("Délai d'expiration"))
+                    Text(L("secondes"))
                 }
                 .frame(height: 30)
                 // On one line, or the timeout below the method when the dialog is narrow.
@@ -245,17 +245,17 @@ struct ConnectionDialog: View {
                     }
                 }
             }
-            check("Monter à l'ouverture de session", $draft.mountAtLogin)
+            check(L("Monter à l'ouverture de session"), $draft.mountAtLogin)
                 .padding(.top, 4.5)
-            check("Lecture seule", $draft.readOnly)
+            check(L("Lecture seule"), $draft.readOnly)
             if provider.kind == .server && provider.type != "sftp" {
-                check("Ignorer les erreurs de certificat", $draft.skipCertificateCheck)
+                check(L("Ignorer les erreurs de certificat"), $draft.skipCertificateCheck)
             }
             if editing == nil {
-                check("Chiffrer les fichiers avant l'envoi (rclone crypt)", $draft.encrypt)
+                check(L("Chiffrer les fichiers avant l'envoi (rclone crypt)"), $draft.encrypt)
                 if draft.encrypt {
-                    row("Phrase secrète", error: errors[.encryptionPassword]) {
-                        FieldBox(text: $draft.encryptionPassword, placeholder: "Gardez-la en lieu sûr : sans elle, les fichiers sont illisibles",
+                    row(L("Phrase secrète"), error: errors[.encryptionPassword]) {
+                        FieldBox(text: $draft.encryptionPassword, placeholder: L("Gardez-la en lieu sûr : sans elle, les fichiers sont illisibles"),
                                  secure: true, invalid: errors[.encryptionPassword] != nil)
                             .focused($focus, equals: .encryptionPassword)
                     }
@@ -289,10 +289,10 @@ struct ConnectionDialog: View {
 
     private var intro: String {
         switch provider.kind {
-        case .oauth: "Connectez votre compte \(provider.name) dans le navigateur, puis montez-le comme un disque."
-        case .login: "Montez votre espace \(provider.name) comme un disque."
-        case .s3: "Montez un bucket compatible S3 comme un disque."
-        case .server: "Montez un serveur \(provider.name) comme un disque."
+        case .oauth: L("Connectez votre compte \(provider.name) dans le navigateur, puis montez-le comme un disque.")
+        case .login: L("Montez votre espace \(provider.name) comme un disque.")
+        case .s3: L("Montez un bucket compatible S3 comme un disque.")
+        case .server: L("Montez un serveur \(provider.name) comme un disque.")
         }
     }
 
@@ -301,7 +301,7 @@ struct ConnectionDialog: View {
     private var footer: some View {
         HStack(spacing: 10) {
             HStack(spacing: 10) {
-                Button("Tester la connexion", action: runTest)
+                Button(L("Tester la connexion"), action: runTest)
                     .buttonStyle(PushButtonStyle.large)
                     .disabled(test == .running || saving)
                 Group {
@@ -311,7 +311,7 @@ struct ConnectionDialog: View {
                     case .running:
                         HStack(spacing: 5) {
                             ProgressView().controlSize(.small)
-                            Text("Test en cours…")
+                            Text(L("Test en cours…"))
                         }
                     case .succeeded(let message):
                         Label(message, systemImage: "checkmark.circle").foregroundStyle(Theme.green)
@@ -323,13 +323,13 @@ struct ConnectionDialog: View {
                 .foregroundStyle(Theme.text2)
             }
             Spacer(minLength: 10)
-            Button("Annuler", action: close)
+            Button(L("Annuler"), action: close)
                 .buttonStyle(PushButtonStyle.large)
             Button(action: submit) {
                 if saving {
                     ProgressView().controlSize(.small).tint(.white)
                 } else {
-                    Text(editing == nil ? "Connecter" : "Enregistrer")
+                    Text(editing == nil ? L("Connecter") : L("Enregistrer"))
                 }
             }
             .buttonStyle(PushButtonStyle.largePrimary)
@@ -385,7 +385,7 @@ struct ConnectionDialog: View {
                 let client = if let editing { await store.storedClient(editing) } else { draft.client?.trimmed }
                 let (token, account) = try await store.authorize(provider, client: client)
                 draft.token = token
-                draft.authorizedAccount = account ?? "Compte \(provider.name)"
+                draft.authorizedAccount = account ?? L("Compte \(provider.name)")
             } catch is CancellationError {
             } catch {
                 errors[.signIn] = error.localizedDescription
@@ -433,7 +433,7 @@ struct ConnectionDialog: View {
                 if let editing {
                     try await store.updateConnection(editing, with: draft)
                     app.overlay = nil
-                    app.show("Modifications de « \(editing.name) » enregistrées")
+                    app.show(L("Modifications de « \(editing.name) » enregistrées"))
                 } else {
                     let drive = try await store.addDrive(draft)
                     app.overlay = nil

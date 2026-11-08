@@ -180,7 +180,7 @@ struct CloseButton: View {
         }
         .buttonStyle(.plain)
         .keyboardShortcut(.cancelAction)
-        .accessibilityLabel("Fermer")
+        .accessibilityLabel(L("Fermer"))
     }
 }
 
@@ -209,7 +209,7 @@ struct SwitchToggle: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
-        .accessibilityValue(isOn ? "activé" : "désactivé")
+        .accessibilityValue(isOn ? L("activé") : L("désactivé"))
         .accessibilityAddTraits(.isToggle)
     }
 }

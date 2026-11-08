@@ -15,8 +15,8 @@ struct GoogleKeyDialog: View {
     var body: some View {
         ModalSurface(width: 580) {
             VStack(alignment: .leading, spacing: 0) {
-                ModalHead(title: "Clé Google de « \(drive.name) »",
-                          subtitle: "Avec votre propre clé, Google accorde à ce lecteur son propre quota au lieu de celui que se partagent tous les utilisateurs de rclone.",
+                ModalHead(title: L("Clé Google de « \(drive.name) »"),
+                          subtitle: L("Avec votre propre clé, Google accorde à ce lecteur son propre quota au lieu de celui que se partagent tous les utilisateurs de rclone."),
                           showsLogo: false, close: close)
                 VStack(alignment: .leading, spacing: 0) {
                     GoogleKeyFields(client: $client, labelWidth: 96, invalid: error != nil) { error = $0 }
@@ -28,7 +28,7 @@ struct GoogleKeyDialog: View {
                 .padding(16)
                 .card()
                 .padding(.horizontal, 22)
-                Text("Votre navigateur s'ouvre pour autoriser Docklume avec cette clé. Un lecteur monté est ensuite remonté.")
+                Text(L("Votre navigateur s'ouvre pour autoriser Docklume avec cette clé. Un lecteur monté est ensuite remonté."))
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.text2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -47,7 +47,7 @@ struct GoogleKeyDialog: View {
     private var footer: some View {
         HStack(spacing: 10) {
             if stored != nil {
-                Button("Revenir à la clé partagée") { connect(nil) }
+                Button(L("Revenir à la clé partagée")) { connect(nil) }
                     .buttonStyle(PushButtonStyle.large)
                     .disabled(signIn != nil)
             }
@@ -55,14 +55,14 @@ struct GoogleKeyDialog: View {
             if signIn != nil {
                 HStack(spacing: 6) {
                     ProgressView().controlSize(.small)
-                    Text("En attente du navigateur…")
+                    Text(L("En attente du navigateur…"))
                 }
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.text2)
             }
-            Button("Annuler", action: close)
+            Button(L("Annuler"), action: close)
                 .buttonStyle(PushButtonStyle.large)
-            Button("Se connecter") { connect(client) }
+            Button(L("Se connecter")) { connect(client) }
                 .buttonStyle(PushButtonStyle.largePrimary)
                 .keyboardShortcut(.defaultAction)
                 .disabled(signIn != nil)
@@ -89,7 +89,7 @@ struct GoogleKeyDialog: View {
             do {
                 let account = try await store.setClient(drive, key)
                 app.overlay = nil
-                app.show(key == nil ? "Clé partagée de rclone rétablie pour \(account)" : "Clé Google enregistrée pour \(account)")
+                app.show(key == nil ? L("Clé partagée de rclone rétablie pour \(account)") : L("Clé Google enregistrée pour \(account)"))
             } catch is CancellationError {
             } catch {
                 if !Task.isCancelled { self.error = error.localizedDescription }
@@ -110,18 +110,18 @@ struct GoogleKeyFields: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            row("ID client") {
+            row(L("ID client")) {
                 FieldBox(text: $client.id, placeholder: "…apps.googleusercontent.com", invalid: invalid)
-                    .accessibilityLabel("ID client")
+                    .accessibilityLabel(L("ID client"))
             }
-            row("Code secret") {
+            row(L("Code secret")) {
                 FieldBox(text: $client.secret, placeholder: "GOCSPX-…", secure: true, invalid: invalid)
-                    .accessibilityLabel("Code secret")
+                    .accessibilityLabel(L("Code secret"))
             }
             HStack(spacing: 14) {
-                Button("Importer le fichier JSON…", action: importFile)
+                Button(L("Importer le fichier JSON…"), action: importFile)
                     .buttonStyle(PushButtonStyle())
-                Link("Créer une clé", destination: Self.guide)
+                Link(L("Créer une clé"), destination: Self.guide)
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.accent)
             }
@@ -139,8 +139,8 @@ struct GoogleKeyFields: View {
     private func importFile() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.json]
-        panel.prompt = "Importer"
-        panel.message = "Choisissez le fichier JSON téléchargé à la création du client dans Google Cloud."
+        panel.prompt = L("Importer")
+        panel.message = L("Choisissez le fichier JSON téléchargé à la création du client dans Google Cloud.")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             client = try OAuthClient(googleFile: url)

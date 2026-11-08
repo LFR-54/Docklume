@@ -57,7 +57,7 @@ struct Rclone: Sendable {
             let answer = step.option?.name == "config_refresh_token" ? "false" : step.option?.defaultString ?? ""
             arguments = ["config", "update", name, "--continue", "--state", step.state, "--result", answer, "--non-interactive"]
         }
-        throw RcloneError.command("La configuration de rclone n'a pas abouti.")
+        throw RcloneError.command(L("La configuration de rclone n'a pas abouti."))
     }
 
     func deleteRemote(_ name: String) async throws {
@@ -68,7 +68,7 @@ struct Rclone: Sendable {
     func authorize(_ type: String, client: OAuthClient? = nil) async throws -> String {
         let output = try await run(["authorize", type] + (client.map { [$0.id, $0.secret] } ?? []))
         guard let start = output.range(of: "--->"), let end = output.range(of: "<---End paste") else {
-            throw RcloneError.command("L'autorisation n'a pas renvoyé de jeton.")
+            throw RcloneError.command(L("L'autorisation n'a pas renvoyé de jeton."))
         }
         return output[start.upperBound..<end.lowerBound].trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -221,8 +221,8 @@ enum RcloneError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .notFound: "rclone est introuvable. Installez-le dans ~/.local/bin ou avec Homebrew."
-        case .command(let message): message ?? "rclone a échoué."
+        case .notFound: L("rclone est introuvable. Installez-le dans ~/.local/bin ou avec Homebrew.")
+        case .command(let message): message ?? L("rclone a échoué.")
         }
     }
 }
@@ -241,21 +241,21 @@ enum RcloneLog {
     static func explain(_ message: String, provider: String? = nil) -> String {
         if message.contains("Quota exceeded") || message.contains("rateLimitExceeded") {
             return message.contains("202264815644")
-                ? "Google refuse les requêtes : la clé partagée de rclone a dépassé son quota. Réessayez plus tard, ou utilisez votre propre clé dans la fiche du lecteur."
-                : "Google refuse les requêtes : quota dépassé. Réessayez dans quelques minutes."
+                ? L("Google refuse les requêtes : la clé partagée de rclone a dépassé son quota. Réessayez plus tard, ou utilisez votre propre clé dans la fiche du lecteur.")
+                : L("Google refuse les requêtes : quota dépassé. Réessayez dans quelques minutes.")
         }
         // kDrive answers 404 for any number that is not the ID of a kDrive with WebDAV, credentials or not.
         if message.contains("404 Not Found") || message.contains("directory not found") {
             return provider == "kdrive"
-                ? "kDrive introuvable à cette adresse. L'ID est le nombre qui suit /drive/ dans l'adresse de kDrive sur le Web, et le WebDAV n'est pas inclus dans les offres kSuite Free et Standard ni dans my kSuite."
-                : "Le serveur ne trouve rien à cette adresse (erreur 404). Vérifiez l'adresse et le chemin."
+                ? L("kDrive introuvable à cette adresse. L'ID est le nombre qui suit /drive/ dans l'adresse de kDrive sur le Web, et le WebDAV n'est pas inclus dans les offres kSuite Free et Standard ni dans my kSuite.")
+                : L("Le serveur ne trouve rien à cette adresse (erreur 404). Vérifiez l'adresse et le chemin.")
         }
         if message.contains("NotAuthenticated") || message.contains("401 Unauthorized") {
             return provider == "kdrive"
-                ? "Identifiant ou mot de passe refusés. Avec la double authentification, utilisez un mot de passe d'application Infomaniak."
-                : "Identifiant ou mot de passe refusés par le serveur."
+                ? L("Identifiant ou mot de passe refusés. Avec la double authentification, utilisez un mot de passe d'application Infomaniak.")
+                : L("Identifiant ou mot de passe refusés par le serveur.")
         }
-        if isNetworkError(message) { return "Serveur injoignable. Vérifiez la connexion à Internet et l'adresse du serveur." }
+        if isNetworkError(message) { return L("Serveur injoignable. Vérifiez la connexion à Internet et l'adresse du serveur.") }
         return message
     }
 

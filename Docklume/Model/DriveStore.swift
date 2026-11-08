@@ -60,7 +60,9 @@ final class DriveStore {
 
     /// What happens to files still being uploaded when the drives are unmounted.
     static func unsentMessage(_ count: Int) -> String {
-        "\(Format.plural(count, "fichier")) n'\(count > 1 ? "ont" : "a") pas fini d'être envoyé\(count > 1 ? "s" : ""). L'envoi reprendra au prochain montage du lecteur."
+        count > 1
+            ? L("\(count) fichiers n'ont pas fini d'être envoyés. L'envoi reprendra au prochain montage du lecteur.")
+            : L("\(count) fichier n'a pas fini d'être envoyé. L'envoi reprendra au prochain montage du lecteur.")
     }
     var uploads: [(drive: Drive, upload: Upload)] { drives.flatMap { drive in drive.uploads.map { (drive, $0) } } }
     var totalCacheBytes: Int64 { drives.reduce(0) { $0 + $1.cacheBytes } }
@@ -221,12 +223,12 @@ final class DriveStore {
     func mount(_ drive: Drive) {
         guard rclone != nil, sessions[drive.id] == nil, !checkingServer.contains(drive.id) else { return }
         guard drive.settings.method.isAvailable else {
-            drive.state = .failed("macFUSE n'est pas installé. Choisissez NFS intégré dans la fiche du lecteur.")
+            drive.state = .failed(L("macFUSE n'est pas installé. Choisissez NFS intégré dans la fiche du lecteur."))
             return
         }
         // Mounting over another volume would hide it, and its rclone may be using the same cache.
         guard !Mounts.isMounted(drive.mountPoint) else {
-            return fail(drive, "Un autre montage occupe déjà \(drive.displayPath). Démontez-le, puis réessayez.")
+            return fail(drive, L("Un autre montage occupe déjà \(drive.displayPath). Démontez-le, puis réessayez."))
         }
         drive.state = .mounting
         ejections[drive.id] = nil
@@ -253,12 +255,12 @@ final class DriveStore {
     /// The server does not answer: rclone is not started, and Docklume tries again until it does, at most 30 s
     /// apart, and at once when macOS reports the network back.
     private func serverSilent(_ drive: Drive) async {
-        let silent = "\(drive.provider.name) ne répond pas"
-        guard drive.settings.autoReconnect else { return fail(drive, "\(silent). Vérifiez la connexion à Internet, puis réessayez.") }
+        let silent = L("\(drive.provider.name) ne répond pas")
+        guard drive.settings.autoReconnect else { return fail(drive, L("\(silent). Vérifiez la connexion à Internet, puis réessayez.")) }
         let attempts = reconnects[drive.id, default: 0]
         reconnects[drive.id] = attempts + 1
         let delay = min(30, 5 << min(attempts, 3))
-        await mountAgain(drive, after: delay, "\(silent), nouvelle tentative dans \(delay) s…")
+        await mountAgain(drive, after: delay, L("\(silent), nouvelle tentative dans \(delay) s…"))
     }
 
     private func start(_ drive: Drive) {
@@ -299,7 +301,7 @@ final class DriveStore {
             watch(drive, session)
             if Mounts.same(orphan.mountPoint, drive.mountPoint), Mounts.isMounted(drive.mountPoint) {
                 drive.state = .mounted
-                drive.notice = "Montage repris : Docklume s'était arrêté sans démonter ce lecteur."
+                drive.notice = L("Montage repris : Docklume s'était arrêté sans démonter ce lecteur.")
             } else {
                 drive.state = .unmounting
                 stop(drive, session)
@@ -393,7 +395,7 @@ final class DriveStore {
             try? await Task.sleep(for: .milliseconds(250))
         }
         if drive.state == .mounting, session.isRunning {
-            fail(drive, "Le volume n'est pas apparu après 3 minutes.")
+            fail(drive, L("Le volume n'est pas apparu après 3 minutes."))
             stop(drive, session)
         }
     }
@@ -402,8 +404,8 @@ final class DriveStore {
     private func slowMountNotice(_ drive: Drive) async -> String {
         let config = drive.provider.type == "drive" ? (try? await rclone?.dump())?[drive.remote] : nil
         return config?["client_id", default: ""].isEmpty == true
-            ? "Google limite la clé partagée de rclone, nouvelle tentative en cours. Votre propre clé, dans la fiche du lecteur, évite cette attente."
-            : "Le serveur tarde à répondre. rclone réessaie, ce qui peut prendre deux minutes."
+            ? L("Google limite la clé partagée de rclone, nouvelle tentative en cours. Votre propre clé, dans la fiche du lecteur, évite cette attente.")
+            : L("Le serveur tarde à répondre. rclone réessaie, ce qui peut prendre deux minutes.")
     }
 
     /// Removes the mount point folder unless something is mounted on it or it holds files.
@@ -427,7 +429,7 @@ final class DriveStore {
         drive.uploads = []
         func failure() -> String {
             RcloneLog.lastError(at: drive.logFile, after: session.logOffset)
-                ?? status.map { "rclone s'est arrêté (code \($0))." } ?? "rclone s'est arrêté."
+                ?? status.map { L("rclone s'est arrêté (code \($0)).") } ?? L("rclone s'est arrêté.")
         }
         switch drive.state {
         case .failed:
@@ -444,7 +446,7 @@ final class DriveStore {
             if drive.settings.autoReconnect, RcloneLog.isNetworkError(message) {
                 reconnects[drive.id] = attempts + 1
                 let delay = min(30, 5 << min(attempts, 3))
-                await mountAgain(drive, after: delay, "Serveur injoignable, nouvelle tentative dans \(delay) s…")
+                await mountAgain(drive, after: delay, L("Serveur injoignable, nouvelle tentative dans \(delay) s…"))
             } else {
                 reconnects[drive.id] = nil
                 fail(drive, message)
@@ -457,8 +459,8 @@ final class DriveStore {
             let attempts = reconnects[drive.id, default: 0]
             if drive.settings.autoReconnect, attempts < 3 {
                 reconnects[drive.id] = attempts + 1
-                await mountAgain(drive, after: 5, "rclone s'est arrêté, nouvelle tentative de montage…")
-                if drive.state == .mounting, sessions[drive.id] != nil { drive.notice = "Remonté automatiquement après l'arrêt de rclone." }
+                await mountAgain(drive, after: 5, L("rclone s'est arrêté, nouvelle tentative de montage…"))
+                if drive.state == .mounting, sessions[drive.id] != nil { drive.notice = L("Remonté automatiquement après l'arrêt de rclone.") }
             } else {
                 fail(drive, failure())
             }
@@ -497,9 +499,9 @@ final class DriveStore {
         let lowered = message.lowercased()
         let expired = lowered.contains("token") && ["expired", "invalid_grant", "unauthorized", "401"].contains { lowered.contains($0) }
         if expired, preferences.notifySessionExpired {
-            notify("Session expirée : \(drive.name)", "Reconnectez le lecteur depuis sa fiche.")
+            notify(L("Session expirée : \(drive.name)"), L("Reconnectez le lecteur depuis sa fiche."))
         } else if preferences.notifyMountFailure {
-            notify("Échec du montage de « \(drive.name) »", message)
+            notify(L("Échec du montage de « \(drive.name) »"), message)
         }
     }
 
@@ -507,14 +509,14 @@ final class DriveStore {
 
     func nameError(_ value: String, except id: String? = nil) -> String? {
         let name = value.trimmingCharacters(in: .whitespaces)
-        if name.isEmpty { return "Saisissez un nom." }
-        if name.contains("/") || name.contains(":") { return "Le nom ne peut pas contenir « / » ni « : »." }
+        if name.isEmpty { return L("Saisissez un nom.") }
+        if name.contains("/") || name.contains(":") { return L("Le nom ne peut pas contenir « / » ni « : ».") }
         // The name is the folder of the mount point: "." or ".." would mount over its parent.
-        if name.hasPrefix(".") { return "Le nom ne peut pas commencer par un point." }
+        if name.hasPrefix(".") { return L("Le nom ne peut pas commencer par un point.") }
         if name.compare(TagShortcuts.root.lastPathComponent, options: .caseInsensitive) == .orderedSame {
-            return "« \(TagShortcuts.root.lastPathComponent) » est réservé au dossier des tags, dans ~/Cloud."
+            return L("« \(TagShortcuts.root.lastPathComponent) » est réservé au dossier des tags, dans ~/Cloud.")
         }
-        if drives.contains(where: { $0.id != id && $0.name.lowercased() == name.lowercased() }) { return "Un lecteur porte déjà ce nom." }
+        if drives.contains(where: { $0.id != id && $0.name.lowercased() == name.lowercased() }) { return L("Un lecteur porte déjà ce nom.") }
         return nil
     }
 
@@ -548,7 +550,7 @@ final class DriveStore {
     func duplicate(_ drive: Drive) -> Drive {
         var record = drive.record
         record.id = UUID().uuidString
-        record.name = freeName("\(drive.name) copie")
+        record.name = freeName(L("\(drive.name) copie"))
         record.settings.lastRefresh = nil
         record.settings.mountAtLogin = false
         let copy = Drive(record: record)
@@ -561,8 +563,8 @@ final class DriveStore {
     /// What deleting a drive does to rclone.conf.
     func deletionMessage(_ drive: Drive) -> String {
         !removesRemote(drive)
-            ? "Le volume est démonté et le lecteur retiré de Docklume. Le remote « \(drive.remote) » reste dans rclone.conf. Les fichiers dans le cloud ne sont pas touchés."
-            : "Le volume est démonté et sa configuration supprimée. Les fichiers dans le cloud ne sont pas touchés."
+            ? L("Le volume est démonté et le lecteur retiré de Docklume. Le remote « \(drive.remote) » reste dans rclone.conf. Les fichiers dans le cloud ne sont pas touchés.")
+            : L("Le volume est démonté et sa configuration supprimée. Les fichiers dans le cloud ne sont pas touchés.")
     }
 
     /// Files written to the drive that rclone has not uploaded yet; they exist only in its cache.
@@ -571,8 +573,8 @@ final class DriveStore {
     }
 
     static func pendingMessage(_ drive: Drive, _ pending: CacheFolder.Pending) -> String {
-        "« \(drive.name) » a encore \(Format.plural(pending.files, "fichier")) à envoyer (\(Format.capacity(pending.bytes))). "
-            + "Montez-le et attendez la fin des envois avant de le supprimer."
+        L("« \(drive.name) » a encore \(Format.plural(pending.files, "fichier")) à envoyer (\(Format.capacity(pending.bytes))). ")
+            + L("Montez-le et attendez la fin des envois avant de le supprimer.")
     }
 
     /// Refuses while files are waiting to be uploaded, since deleting the drive deletes its cache.
@@ -618,7 +620,7 @@ final class DriveStore {
 
     func refreshContent(_ drive: Drive) async throws {
         guard let session = sessions[drive.id] else {
-            throw RcloneError.command("Montez le lecteur pour actualiser son contenu.")
+            throw RcloneError.command(L("Montez le lecteur pour actualiser son contenu."))
         }
         try await session.call("vfs/forget")
         drive.record.settings.lastRefresh = .now
@@ -697,7 +699,7 @@ final class DriveStore {
             var found = try await rclone.firstFile(in: drive.remoteSpec, minimum: 1_000_000_000)
             if found == nil { found = try await rclone.firstFile(in: drive.remoteSpec, minimum: 100_000_000) }
             guard let file = found else {
-                throw RcloneError.command("Aucun fichier de plus de 100 Mo à lire sur ce lecteur.")
+                throw RcloneError.command(L("Aucun fichier de plus de 100 Mo à lire sur ce lecteur."))
             }
             let length = min(file.size, 1_000_000_000)
             // A random stretch, so a part already in the cache does not flatter the result.
@@ -766,14 +768,14 @@ final class DriveStore {
         try await rclone.configure("test", type: draft.provider.type, parameters: parameters, config: config)
         let spec = "test:" + draft.remotePath
         if let free = try? await rclone.about(spec, config: config).free {
-            return "Connexion réussie · \(Format.capacity(free)) libres"
+            return L("Connexion réussie · \(Format.capacity(free)) libres")
         }
         do {
             _ = try await rclone.run(["lsf", spec, "--max-depth", "1"], config: config)
         } catch {
             throw RcloneError.command(RcloneLog.explain(error.localizedDescription, provider: draft.provider.id))
         }
-        return "Connexion réussie"
+        return L("Connexion réussie")
     }
 
     func addDrive(_ draft: ConnectionDraft) async throws -> Drive {
@@ -840,10 +842,10 @@ final class DriveStore {
         let (current, latest) = try await rclone.updateCheck()
         // The bundled build is named after the release it is built on, with a suffix.
         let release = current.split(separator: "-").first.map(String.init) ?? current
-        if latest.isEmpty || latest == release { return "rclone \(release) est à jour" }
+        if latest.isEmpty || latest == release { return L("rclone \(release) est à jour") }
         return rclone.isBundled
-            ? "rclone \(latest) est sorti, il arrivera avec une prochaine version de Docklume (inclus : \(release))"
-            : "rclone \(latest) est disponible (installé : \(current))"
+            ? L("rclone \(latest) est sorti, il arrivera avec une prochaine version de Docklume (inclus : \(release))")
+            : L("rclone \(latest) est disponible (installé : \(current))")
     }
 
     /// The remote holding the credentials: the wrapped one for an encrypted drive.
@@ -979,20 +981,20 @@ final class DriveStore {
         guard let (drive, freeable) = candidates.max(by: { $0.freeable < $1.freeable }), freeable >= 1_000_000_000 else {
             if !warnedDiskFull, waiting {
                 warnedDiskFull = true
-                notify("Le disque est presque plein", "Des fichiers attendent d'être envoyés et ne peuvent pas être retirés du cache. Libérez de la place sur ce Mac.")
+                notify(L("Le disque est presque plein"), L("Des fichiers attendent d'être envoyés et ne peuvent pas être retirés du cache. Libérez de la place sur ce Mac."))
             }
             return
         }
         warnedDiskFull = false
         await clearCache(drive)
-        drive.notice = "Cache vidé (\(Format.gigabytes(freeable))) et lecteur remonté : le disque était presque plein."
+        drive.notice = L("Cache vidé (\(Format.gigabytes(freeable))) et lecteur remonté : le disque était presque plein.")
     }
 
     private func warnIfNearlyFull(_ drive: Drive) {
         guard SpaceLevel(drive.space).isNearlyFull, preferences.notifyNearlyFull, !warnedFull.contains(drive.id),
               let free = SpaceLevel(drive.space).free else { return }
         warnedFull.insert(drive.id)
-        notify("« \(drive.name) » est presque plein", "Il reste \(Format.capacity(free)) libres.")
+        notify(L("« \(drive.name) » est presque plein"), L("Il reste \(Format.capacity(free)) libres."))
     }
 
     private func notify(_ title: String, _ body: String) {
