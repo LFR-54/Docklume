@@ -31,6 +31,7 @@ Docklume brings your Dropbox, Google Drive or OneDrive accounts, your NAS and yo
 - **Tuned for the job.** Video, documents or backups: each drive is set up for what you do with it.
 - **Live throughput.** In the window and in the menu bar, drive by drive.
 - **Always ready.** Docklume starts with your session, stays in the menu bar and mounts the drives you choose.
+- **Your order.** Drag the drives into the order you want, and gather them in collapsible groups.
 - **Nothing lost.** A file not uploaded yet stays on the Mac until it is, and Docklume warns you before unmounting or quitting.
 - **Outages handled.** After an Internet outage, your drives pick up on their own.
 - **Finder tags.** Tags and colors stay on your online files, with macFUSE.
@@ -110,7 +111,7 @@ Already using rclone? The remotes in your `rclone.conf`, of any type, are picked
 
 ## Install
 
-1. Download `Docklume-0.1.zip` from the [latest release](https://github.com/LFR-54/Docklume/releases/latest), open it and drag Docklume to Applications.
+1. Download `Docklume-0.1.1.zip` from the [latest release](https://github.com/LFR-54/Docklume/releases/latest), open it and drag Docklume to Applications.
 2. On first launch, macOS blocks the app, which is not notarized by Apple yet. Open **System Settings › Privacy & Security**, then click **Open Anyway**.
 
 ## Getting started

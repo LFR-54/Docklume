@@ -39,7 +39,26 @@ struct Release: Identifiable {
 
     /// Built when asked for, in the app's language.
     static var all: [Release] { [
-        Release(version: "0.1", day: day(2026, 11, 7), latest: true, engine: "rclone 1.75.2", notes: [
+        Release(version: "0.1.1", day: day(2026, 11, 9), latest: true, engine: "rclone 1.75.2", notes: [
+            .new: [
+                Note(text: L("Lecteurs rangés par glisser-déposer, dans des groupes repliables à activer dans Paramètres"), bold: true),
+                Note(text: L("Groupes gardés quand l'option est désactivée, retrouvés tels quels en la réactivant")),
+                Note(text: L("Cache sur un disque externe : les lecteurs attendent qu'il soit branché, puis se montent d'eux-mêmes")),
+                Note(text: L("Réglage Thème : Automatique, Standard ou Noël"))
+            ],
+            .improved: [
+                Note(text: L("Espace en ligne compté comme les services : un forfait Dropbox de 10 To affiche 10,00 To, et non plus 11,00 To")),
+                Note(text: L("Cartes de lecteurs plus espacées, et le thème de Noël ne décale plus aucune page")),
+                Note(text: L("Bonnet de Noël posé sur le dessus du logo"))
+            ],
+            .fixed: [
+                Note(text: L("Se connecter à un service fonctionne de nouveau après avoir fermé la page du navigateur")),
+                Note(text: L("Quitter Docklume pendant une connexion ou un test de débit ne laisse plus rclone tourner en arrière-plan")),
+                Note(text: L("« Vider tout le cache » ne touche plus qu'aux caches des lecteurs, même dans un dossier partagé")),
+                Note(text: L("Champ de renommage lisible quand le nom est sélectionné"))
+            ]
+        ]),
+        Release(version: "0.1", day: day(2026, 11, 7), engine: "rclone 1.75.2", notes: [
             .new: [
                 Note(text: L("Vos stockages en ligne montés comme des disques dans le Finder, avec macFUSE ou le client NFS intégré à macOS"), bold: true),
                 Note(text: L("Moteur rclone inclus et optimisé : 16 connexions partagées entre les fichiers lus, 60 Mo/s sur un seul fichier Dropbox"), bold: true),

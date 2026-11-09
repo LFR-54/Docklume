@@ -31,6 +31,7 @@ Docklume fait apparaître vos comptes Dropbox, Google Drive ou OneDrive, votre N
 - **Réglé selon l'usage.** Vidéo, documents ou sauvegarde : chaque lecteur est réglé pour ce que vous en faites.
 - **Le débit en direct.** Dans la fenêtre et dans la barre des menus, lecteur par lecteur.
 - **Toujours prêt.** Docklume démarre avec votre session, reste dans la barre des menus et monte les lecteurs de votre choix.
+- **Votre ordre.** Glissez les lecteurs dans l'ordre voulu et rangez-les dans des groupes repliables.
 - **Rien de perdu.** Un fichier pas encore envoyé reste sur le Mac jusqu'à son envoi, et Docklume prévient avant de démonter ou de quitter.
 - **Coupures gérées.** Après une coupure d'Internet, vos lecteurs reprennent seuls.
 - **Tags du Finder.** Tags et couleurs restent sur vos fichiers en ligne, avec macFUSE.
@@ -111,7 +112,7 @@ Vous utilisez déjà rclone ? Les remotes de votre `rclone.conf`, de n'importe q
 
 ## Installer
 
-1. Téléchargez `Docklume-0.1.zip` depuis la [dernière version](https://github.com/LFR-54/Docklume/releases/latest), ouvrez-le et glissez Docklume dans Applications.
+1. Téléchargez `Docklume-0.1.1.zip` depuis la [dernière version](https://github.com/LFR-54/Docklume/releases/latest), ouvrez-le et glissez Docklume dans Applications.
 2. Au premier lancement, macOS bloque l'app, qui n'est pas encore notariée par Apple. Ouvrez **Réglages Système › Confidentialité et sécurité**, puis cliquez sur **Ouvrir quand même**.
 
 ## Premiers pas
