@@ -14,8 +14,8 @@ enum Format {
         return "\(Int((bytesPerSecond / 1_000).rounded())) \(unit("Ko/s"))"
     }
 
-    /// Space in the cloud, in powers of 1024 as the services count it: Dropbox's 10 To plan, 10 × 1024⁴ bytes,
-    /// reads "10,00 To" here and on its site, where the Finder shows 11 To.
+    /// Space in the cloud, in powers of 1024 as the services count it: a 2 To plan, 2 × 1024⁴ bytes, reads
+    /// "2,00 To" here as on the service's site, where the Finder shows 2,2 To.
     static func capacity(_ bytes: Int64) -> String { scaled(Double(bytes), base: 1024) }
 
     /// Files on this Mac, in powers of 1000 as the Finder counts them: "1,31 To", "620 Go", "85 Mo".

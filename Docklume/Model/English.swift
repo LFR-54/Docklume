@@ -181,8 +181,8 @@ enum English {
         "Cache sur un disque externe : les lecteurs attendent qu'il soit branché, puis se montent d'eux-mêmes":
             "Cache on an external disk: drives wait for it to be connected, then mount on their own",
         "Réglage Thème : Automatique, Standard ou Noël": "Theme setting: Automatic, Standard or Christmas",
-        "Espace en ligne compté comme les services : un forfait Dropbox de 10 To affiche 10,00 To, et non plus 11,00 To":
-            "Online space counted as the services count it: a 10 TB Dropbox plan shows 10.00 TB, no longer 11.00 TB",
+        "Espace en ligne affiché comme le compte chaque service, avec 1 To pour 1 024 Go":
+            "Online space shown as each service counts it, with 1 TB for 1,024 GB",
         "Cartes de lecteurs plus espacées, et le thème de Noël ne décale plus aucune page":
             "Drive cards spaced a little more, and the Christmas theme no longer shifts any page",
         "Bonnet de Noël posé sur le dessus du logo": "Christmas hat worn on top of the logo",

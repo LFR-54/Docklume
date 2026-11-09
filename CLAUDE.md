@@ -87,8 +87,8 @@ encore faites.
 - Pas d'accord par interpolation (`\(n > 1 ? "s" : "")`) : une phrase au singulier et une au pluriel, ou
   `Format.plural`. Les valeurs enregistrées (`Profile`, `MountMethod`, `AppTheme`) gardent leur `rawValue`
   français et s'affichent par `title`. Unités : Mo/Go/To en français, MB/GB/TB en anglais (`Format.unit`).
-  L'espace du cloud se compte en puissances de 1024 comme les services (`Format.capacity` : Dropbox 10 To =
-  10 × 1024⁴ octets), les fichiers du Mac en puissances de 1000 comme le Finder (`Format.fileSize`, `Format.gigabytes`).
+  L'espace du cloud se compte en puissances de 1024 comme les services (`Format.capacity` : un forfait de 2 To =
+  2 × 1024⁴ octets), les fichiers du Mac en puissances de 1000 comme le Finder (`Format.fileSize`, `Format.gigabytes`).
 - Après un texte ajouté ou changé : `python3 -I tools/l10n/check.py` liste les textes sans anglais, les entrées en
   double (plantage au lancement) et les valeurs qui ne correspondent pas.
 - GitHub : `README.md` en anglais, `README.fr.md` en français ; site en anglais dans `docs/`, en français dans

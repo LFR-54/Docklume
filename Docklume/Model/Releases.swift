@@ -47,7 +47,7 @@ struct Release: Identifiable {
                 Note(text: L("Réglage Thème : Automatique, Standard ou Noël"))
             ],
             .improved: [
-                Note(text: L("Espace en ligne compté comme les services : un forfait Dropbox de 10 To affiche 10,00 To, et non plus 11,00 To")),
+                Note(text: L("Espace en ligne affiché comme le compte chaque service, avec 1 To pour 1 024 Go")),
                 Note(text: L("Cartes de lecteurs plus espacées, et le thème de Noël ne décale plus aucune page")),
                 Note(text: L("Bonnet de Noël posé sur le dessus du logo"))
             ],
