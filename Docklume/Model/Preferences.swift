@@ -17,10 +17,12 @@ final class Preferences {
     var showNotesAfterUpdate: Bool { didSet { defaults.set(showNotesAfterUpdate, forKey: "showNotesAfterUpdate") } }
     /// The last version whose notes were opened, which clears the dot on the notes button.
     var notesSeenVersion: String? { didSet { defaults.set(notesSeenVersion, forKey: "notesSeenVersion") } }
-    var christmas: ChristmasTheme { didSet { defaults.set(christmas.rawValue, forKey: "christmas") } }
+    var theme: AppTheme { didSet { defaults.set(theme.rawValue, forKey: "theme") } }
+    /// The drives page shows the groups; turned off, each drive keeps its group for when they come back.
+    var showGroups: Bool { didSet { defaults.set(showGroups, forKey: "showGroups") } }
 
     /// Whether the windows wear the Christmas theme today.
-    var isChristmas: Bool { christmas.isOn(Date()) }
+    var isChristmas: Bool { theme.isChristmas(Date()) }
 
     /// Mirrors the login item; turning it on asks macOS to open Docklume at login.
     var openAtLogin: Bool {
@@ -75,7 +77,8 @@ final class Preferences {
         cacheBase = defaults.string(forKey: "cacheBase").map { URL(filePath: $0, directoryHint: .isDirectory) } ?? MountOptions.defaultCacheBase
         showNotesAfterUpdate = defaults.bool(forKey: "showNotesAfterUpdate")
         notesSeenVersion = defaults.string(forKey: "notesSeenVersion")
-        christmas = defaults.string(forKey: "christmas").flatMap(ChristmasTheme.init) ?? .automatic
+        theme = defaults.string(forKey: "theme").flatMap(AppTheme.init) ?? AppTheme(christmasSetting: defaults.string(forKey: "christmas"))
+        showGroups = defaults.bool(forKey: "showGroups")
         let language = defaults.string(forKey: "language").flatMap(AppLanguage.init) ?? .system
         self.language = language
         Lang.use(language)
@@ -97,28 +100,48 @@ final class Preferences {
     static let appBuild = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
 }
 
-enum ChristmasTheme: String, CaseIterable {
+/// The look of the window: standard, or a seasonal theme all year; Automatique wears each theme in its season.
+/// A new theme is a case here, with its season in `isChristmas`'s like.
+enum AppTheme: String, CaseIterable {
     case automatic = "Automatique"
-    case on = "Activé"
-    case off = "Désactivé"
+    case standard = "Standard"
+    case christmas = "Noël"
 
     /// The raw value is stored in the settings; this is what the app shows.
     var title: String {
         switch self {
         case .automatic: L("Automatique")
-        case .on: L("Activé")
-        case .off: L("Désactivé")
+        case .standard: L("Standard")
+        case .christmas: L("Noël")
         }
     }
 
-    /// The automatic theme runs from the 1st of December to Epiphany.
-    func isOn(_ date: Date, calendar: Calendar = .current) -> Bool {
+    /// One for every choice, so that the settings row keeps its height.
+    var hint: String {
         switch self {
-        case .on: return true
-        case .off: return false
+        case .automatic: L("Noël du 1er décembre au 6 janvier, standard le reste de l'année.")
+        case .standard: L("Sans décor, toute l'année.")
+        case .christmas: L("Ciel d'hiver, neige et bonnet, toute l'année.")
+        }
+    }
+
+    /// Christmas runs from the 1st of December to Epiphany.
+    func isChristmas(_ date: Date, calendar: Calendar = .current) -> Bool {
+        switch self {
+        case .christmas: return true
+        case .standard: return false
         case .automatic:
             let day = calendar.dateComponents([.month, .day], from: date)
             return day.month == 12 || (day.month == 1 && (day.day ?? 0) <= 6)
+        }
+    }
+
+    /// The setting before the themes, "christmas": Activé, Désactivé or Automatique.
+    init(christmasSetting: String?) {
+        switch christmasSetting {
+        case "Activé": self = .christmas
+        case "Désactivé": self = .standard
+        default: self = .automatic
         }
     }
 }

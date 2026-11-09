@@ -20,20 +20,66 @@ struct DrivesPage: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 60)
                 }
-            } else if filtered.isEmpty {
+            } else if filtered(store.drives).isEmpty {
                 EmptyMessage(text: L("Aucun lecteur ne correspond à « \(app.query) »."))
+            } else if store.preferences.showGroups {
+                groupedList
             } else {
-                // The snow on each card needs the room.
-                LazyVStack(spacing: christmas ? 18 : 10) {
-                    ForEach(filtered) { DriveCard(drive: $0) }
-                }
+                cards(store.drives)
+                    // The first card's snow keeps from the subtitle the 24 pt the last card keeps from the bottom.
+                    .padding(.top, christmas ? Christmas.driveSnow + 8 : 0)
             }
         }
     }
 
-    private var filtered: [Drive] {
+    /// 14 pt between the cards; with the Christmas theme, 14 pt of air above each card's snow.
+    private var gap: CGFloat { christmas ? Christmas.driveSnow + 14 : 14 }
+
+    /// Closer under a group's header than between the cards, so that the header reads as the group's.
+    private var underHeader: CGFloat { christmas ? Christmas.driveSnow + 8 : 8 }
+
+    private var searching: Bool { !app.query.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    private func filtered(_ drives: [Drive]) -> [Drive] {
         let query = app.query.trimmingCharacters(in: .whitespaces).lowercased()
-        return query.isEmpty ? store.drives : store.drives.filter { $0.name.lowercased().contains(query) }
+        return query.isEmpty ? drives : drives.filter { $0.name.lowercased().contains(query) }
+    }
+
+    private func cards(_ drives: [Drive]) -> some View {
+        LazyVStack(spacing: gap) {
+            ForEach(filtered(drives)) { DriveCard(drive: $0, gap: gap) }
+        }
+    }
+
+    /// Each group under its header, then the drives without one. A search shows only the groups it finds drives in.
+    private var groupedList: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // "Sans groupe" stays, even empty, to drop a drive back out of its group.
+            let shown = store.sections.filter { !searching || !filtered($0.drives).isEmpty }
+            ForEach(Array(shown.enumerated()), id: \.element.id) { index, section in
+                VStack(alignment: .leading, spacing: 0) {
+                    if let group = section.group {
+                        GroupHeader(group: group, count: section.drives.count, gap: gap)
+                        if !group.collapsed {
+                            if section.drives.isEmpty {
+                                EmptyGroupDrop(group: group.id).padding(.top, 8)
+                            } else {
+                                cards(section.drives).padding(.top, underHeader)
+                            }
+                        }
+                    } else {
+                        if !store.groups.isEmpty { UngroupedHeader(count: section.drives.count) }
+                        cards(section.drives)
+                            .padding(.top, store.groups.isEmpty ? (christmas ? Christmas.driveSnow + 8 : 0) : underHeader)
+                    }
+                }
+                // The header has no snow, and its 32 pt height already sets its title apart: 12.5 pt in both themes.
+                .padding(.top, index == 0 ? 0 : 12.5)
+            }
+            if !searching {
+                NewGroupButton().padding(.top, 16)
+            }
+        }
     }
 }
 
@@ -54,9 +100,31 @@ struct DriveCard: View {
     @Environment(AppState.self) private var app
     @Environment(\.compactLayout) private var compact
     let drive: Drive
+    /// The space between the cards, where the line of a drop is drawn.
+    var gap: CGFloat = 10
     @State private var hovering = false
+    @State private var height: CGFloat = 100
 
     var body: some View {
+        content
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
+            .overlay(alignment: dropLine == true ? .bottom : .top) {
+                if let after = dropLine { DriveDrag.line(after: after, gap: gap) }
+            }
+            .onDrop(of: [DriveDrag.type], delegate: CardDrop(drive: drive, height: height, store: store, app: app))
+            .modifier(DragSource(enabled: app.renaming != drive.id) {
+                app.dragging = .drive(drive.id)
+                return DriveDrag.provider(drive.id)
+            })
+    }
+
+    /// Whether the drop line shows below the card, above it, or not at all.
+    private var dropLine: Bool? {
+        if case .drive(drive.id, let after) = app.dropSpot { return after }
+        return nil
+    }
+
+    @ViewBuilder private var content: some View {
         let actions = DriveActions(store: store, app: app)
         HStack(spacing: 14) {
             ProviderTile(provider: drive.provider, size: 56)
@@ -162,6 +230,16 @@ struct DriveCard: View {
             Button(drive.errorMessage == nil ? L("Monter") : L("Réessayer")) { actions.run(.mount, drive) }
                 .buttonStyle(PushButtonStyle(height: 30, padding: 18))
         }
+    }
+}
+
+/// A card is dragged by its body, except while its name is being edited: the drag would take the text selection.
+private struct DragSource: ViewModifier {
+    let enabled: Bool
+    let provider: () -> NSItemProvider
+
+    func body(content: Content) -> some View {
+        if enabled { content.onDrag(provider) } else { content }
     }
 }
 
@@ -274,9 +352,7 @@ private struct RenameField: View {
                 .focused($focused)
                 .padding(.horizontal, 6)
                 .frame(width: 280, height: 26)
-                .background(Theme.field, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .hairlineBorder(RoundedRectangle(cornerRadius: 6, style: .continuous), Theme.accent)
-                .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Theme.accentSoft).padding(-3))
+                .inlineNameField(invalid: error != nil)
                 .padding(.leading, -7)
                 .onSubmit(commit)
                 .onExitCommand { app.renaming = nil }

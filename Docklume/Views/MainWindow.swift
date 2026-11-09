@@ -99,7 +99,7 @@ struct PageScroll<Content: View>: View {
         ScrollView {
             content
                 // Room for the snow on the first card, which the scroll view would cut.
-                .padding(.top, christmas ? 15 : 0)
+                .padding(.top, christmas ? Christmas.pageSnowRoom : 0)
                 .padding(.leading, 16)
                 .padding(.trailing, 24)
                 .padding(.bottom, 24)
@@ -108,6 +108,8 @@ struct PageScroll<Content: View>: View {
                 .environment(\.snowOnTopOnly, true)
         }
         .scrollIndicators(.automatic)
+        // That room comes out of the header's bottom margin: the page stays where it is without the theme.
+        .padding(.top, christmas ? -Christmas.pageSnowRoom : 0)
     }
 }
 
@@ -282,10 +284,11 @@ struct AppLogo: View {
             .shadow(color: .black.opacity(0.22), radius: shadowRadius, y: shadowY)
             .overlay(alignment: .topLeading) {
                 if christmas {
+                    // Worn on top, tipped to the right, its peak 6 pt below the window buttons.
                     SantaHat()
-                        .frame(width: size * 0.7, height: size * 0.56)
-                        .rotationEffect(.degrees(-18))
-                        .offset(x: -size * 0.16, y: -size * 0.27)
+                        .frame(width: size * 0.64, height: size * 0.48)
+                        .rotationEffect(.degrees(8))
+                        .offset(x: size * 0.18, y: -size * 0.22)
                 }
             }
             .accessibilityHidden(true)

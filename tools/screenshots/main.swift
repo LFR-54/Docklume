@@ -33,7 +33,9 @@ func ramp(_ peak: Double, start: Int, stop: Int = 60) -> [Double] {
         drive.state = mounted ? .mounted : .unmounted
         drive.readSpeed = read * 1e6
         drive.writeSpeed = write * 1e6
-        drive.space = Space(total: Int64(total * 1e12), used: Int64(used * 1e12), free: Int64((total - used) * 1e12))
+        // In TB as the services count them, powers of 1024, as Docklume shows them: a 2 TB plan reads 2,00 To.
+        let tera = 1_099_511_627_776.0
+        drive.space = Space(total: Int64(total * tera), used: Int64(used * tera), free: Int64((total - used) * tera))
         drive.cacheBytes = Int64(cache * 1e9)
         if mounted {
             drive.history = read > 0 ? ramp(read, start: 14) : Array(repeating: 0, count: 60)
@@ -44,23 +46,35 @@ func ramp(_ peak: Double, start: Int, stop: Int = 60) -> [Double] {
     let french = !english
     let drives = [
         make(french ? "Médiathèque" : "Media Library", "dropbox", french ? "camille@exemple.fr" : "sam@example.com", mounted: true, read: 104,
-             used: 8.54, total: 11, profile: .streaming, readOnly: true),
+             used: 7.76, total: 10, profile: .streaming, readOnly: true),
         make("Google Drive", "gdrive", french ? "camille.martin@exemple.fr" : "sam.taylor@example.com", mounted: true, write: 3.2, used: 0.66, total: 2, cache: 1.4),
         make("OneDrive Pro", "onedrive", french ? "c.martin@studio-exemple.fr" : "s.taylor@studio-example.com", mounted: true, read: 18, used: 0.42, total: 1),
         make(french ? "Sauvegardes" : "Backups", "s3", french ? "sauvegardes-mac" : "mac-backups", mounted: false, used: 1.2, total: 10, profile: .backup, fuse: false),
         make(french ? "NAS Maison" : "Home NAS", "synology", french ? "famille" : "family", mounted: false, used: 2.4, total: 4, fuse: false)
     ]
+    if grouped {
+        drives[0].record.group = "media"
+        for drive in drives[1...2] { drive.record.group = "work" }
+    }
     drives[1].uploads = [Upload(name: french ? "Studio/Devis/Devis 2026-11.pdf" : "Studio/Quotes/Quote 2026-11.pdf", bytes: 640_000, size: 1_000_000, speed: 3.2e6)]
     return drives
 }
 
-/// The app's usual look: the Christmas theme stays on Automatique, or off during its season so that it does not show;
+/// DOCKLUME_GROUPS=1 shows the drives in groups: the media drive in one, the work drives in another.
+let grouped = ProcessInfo.processInfo.environment["DOCKLUME_GROUPS"] == "1"
+
+@MainActor func sampleGroups() -> [DriveGroup] {
+    grouped ? [DriveGroup(id: "media", name: english ? "Media" : "Médias"), DriveGroup(id: "work", name: english ? "Work" : "Travail")] : []
+}
+
+/// The app's usual look: the theme stays on Automatique, or Standard during Christmas so that it does not show;
 /// DOCKLUME_CHRISTMAS=1 shows it. The release notes count as read, so no dot sits on their button.
 @MainActor func readmePreferences() -> Preferences {
     let defaults = UserDefaults(suiteName: "readme-snap")!
+    defaults.set(grouped, forKey: "showGroups")
     let christmas = ProcessInfo.processInfo.environment["DOCKLUME_CHRISTMAS"] == "1"
-    let season = ChristmasTheme.automatic.isOn(Date())
-    defaults.set((christmas ? ChristmasTheme.on : season ? .off : .automatic).rawValue, forKey: "christmas")
+    let season = AppTheme.automatic.isChristmas(Date())
+    defaults.set((christmas ? AppTheme.christmas : season ? .standard : .automatic).rawValue, forKey: "theme")
     defaults.set(Preferences.appVersion, forKey: "notesSeenVersion")
     defaults.set(languageSetting, forKey: "language")
     // As on a Mac with macFUSE, where the login item is on by default.
@@ -111,7 +125,7 @@ struct Light { let rect: CGRect; let fill: CGColor; let edge: CGColor }
 
 @MainActor func window(_ name: String, size: CGSize, setup: (AppState) -> Void) {
     for dark in [false, true] {
-        let store = DriveStore(showing: sample(), preferences: readmePreferences(), engineVersion: engine)
+        let store = DriveStore(showing: sample(), groups: sampleGroups(), preferences: readmePreferences(), engineVersion: engine)
         let app = AppState()
         setup(app)
         let host = NSHostingView(rootView: MainWindow().environment(store).environment(app).frame(width: size.width, height: size.height))
@@ -140,7 +154,7 @@ struct Light { let rect: CGRect; let fill: CGColor; let edge: CGColor }
 
 @MainActor func panel() {
     for dark in [false, true] {
-        let store = DriveStore(showing: sample(), preferences: readmePreferences(), engineVersion: engine)
+        let store = DriveStore(showing: sample(), groups: sampleGroups(), preferences: readmePreferences(), engineVersion: engine)
         let host = NSHostingView(rootView: MenuBarPanel().environment(store).environment(AppState()).frame(width: 344).fixedSize(horizontal: false, vertical: true)
             .background(Color(nsColor: dark ? NSColor(white: 0.17, alpha: 1) : NSColor(white: 0.95, alpha: 1))))
         host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)

@@ -70,7 +70,7 @@ struct ActivityPage: View {
             .foregroundStyle(Theme.text2)
             .padding(.horizontal, 12)
             .frame(height: 30)
-            ForEach(store.drives) { drive in
+            ForEach(store.orderedDrives) { drive in
                 Hairline()
                 DriveTableRow(drive: drive) { app.page = .drive(drive.id) }
             }

@@ -27,7 +27,7 @@ enum SpeedProbe {
             process.arguments = ["cat", path, "--offset", "\(offset)", "--count", "\(length)"]
             process.standardOutput = pipe
             process.standardError = FileHandle.nullDevice
-            try process.run()
+            try ChildProcesses.shared.run(process)
             return (pipe.fileHandleForReading, length, { if process.isRunning { process.terminate() } })
         }
     }

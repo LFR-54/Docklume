@@ -79,6 +79,14 @@ struct ConnectionDialog: View {
 
     // MARK: Form
 
+    /// The sign-in button while the browser has the page; clicking it again opens a new one.
+    private var waitingForBrowser: some View {
+        HStack(spacing: 6) {
+            ProgressView().controlSize(.small)
+            Text(L("En attente du navigateur…"))
+        }
+    }
+
     private var form: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -129,27 +137,21 @@ struct ConnectionDialog: View {
                             .font(.system(size: 15))
                             .foregroundStyle(Theme.green)
                         Text(draft.authorizedAccount ?? L("Compte \(provider.name)")).lineLimit(1)
-                        Button(L("Changer de compte…"), action: startSignIn)
-                            .buttonStyle(PushButtonStyle())
-                            .disabled(signIn != nil)
+                        Button(action: startSignIn) {
+                            if signIn != nil { waitingForBrowser } else { Text(L("Changer de compte…")) }
+                        }
+                        .buttonStyle(PushButtonStyle())
                     }
                     .frame(height: 30)
                 } else {
                     Button(action: startSignIn) {
-                        if signIn != nil {
-                            HStack(spacing: 6) {
-                                ProgressView().controlSize(.small)
-                                Text(L("En attente du navigateur…"))
-                            }
-                        } else {
-                            Text(L("Se connecter à \(provider.name)…"))
-                        }
+                        if signIn != nil { waitingForBrowser } else { Text(L("Se connecter à \(provider.name)…")) }
                     }
                     .buttonStyle(PushButtonStyle(height: 30))
                 }
             }
             if draft.token == nil && editing == nil {
-                Text(L("Votre navigateur s'ouvre pour autoriser Docklume."))
+                Text(signIn == nil ? L("Votre navigateur s'ouvre pour autoriser Docklume.") : L("Page fermée ? Cliquez de nouveau pour la rouvrir."))
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.text2)
                     .padding(.leading, 142)
@@ -355,6 +357,7 @@ struct ConnectionDialog: View {
     /// Another service in the same dialog, so it changes in place instead of closing and opening again.
     private func select(_ item: Provider) {
         signIn?.cancel()
+        signIn = nil
         errors = [:]
         focus = nil
         draft = ConnectionDraft(provider: item, name: "")
@@ -380,7 +383,12 @@ struct ConnectionDialog: View {
             errors[.client] = error
             return
         }
+        // Asked again, after the browser page was closed for instance: the sign-in still waiting holds rclone's
+        // sign-in port, 127.0.0.1:53682, until its process has ended.
+        let previous = signIn
+        previous?.cancel()
         signIn = Task {
+            await previous?.value
             do {
                 let client = if let editing { await store.storedClient(editing) } else { draft.client?.trimmed }
                 let (token, account) = try await store.authorize(provider, client: client)
@@ -390,7 +398,8 @@ struct ConnectionDialog: View {
             } catch {
                 errors[.signIn] = error.localizedDescription
             }
-            signIn = nil
+            // A sign-in replaced by another leaves the button to it.
+            if !Task.isCancelled { signIn = nil }
         }
     }
 

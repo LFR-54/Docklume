@@ -74,8 +74,11 @@ enum English {
         "Cache vidé (%@) et lecteur remonté : le disque était presque plein.": "Cache cleared (%@) and drive remounted: the disk was nearly full.",
         "Connexion réussie": "Connected",
         "Connexion réussie · %@ libres": "Connected · %@ free",
-        "Des fichiers attendent d'être envoyés et ne peuvent pas être retirés du cache. Libérez de la place sur ce Mac.":
-            "Files are waiting to be uploaded and cannot leave the cache. Free up space on this Mac.",
+        "Branchez le disque « %@ » avant de supprimer ce lecteur : son cache peut garder des fichiers pas encore envoyés.":
+            "Connect the disk “%@” before deleting this drive: its cache may hold files not uploaded yet.",
+        "Des fichiers attendent d'être envoyés et ne peuvent pas être retirés du cache. Libérez de la place sur le disque du cache.":
+            "Files are waiting to be uploaded and cannot leave the cache. Free up space on the cache's disk.",
+        "En attente du disque « %@ », qui garde le cache.": "Waiting for the disk “%@”, which holds the cache.",
         "Google limite la clé partagée de rclone, nouvelle tentative en cours. Votre propre clé, dans la fiche du lecteur, évite cette attente.":
             "Google is limiting rclone's shared key, trying again. Your own key, on the drive's page, avoids this wait.",
         "Il reste %@ libres.": "%@ left.",
@@ -99,6 +102,8 @@ enum English {
         "Session expirée : %@": "Session expired: %@",
         "Un autre montage occupe déjà %@. Démontez-le, puis réessayez.": "Another mount already uses %@. Unmount it, then try again.",
         "Un lecteur porte déjà ce nom.": "A drive already has this name.",
+        "Un groupe porte déjà ce nom.": "A group already has this name.",
+        "Nouveau groupe": "New Group",
         "fichier": "file",
         "macFUSE n'est pas installé. Choisissez NFS intégré dans la fiche du lecteur.":
             "macFUSE is not installed. Choose Built-in NFS on the drive's page.",
@@ -116,9 +121,7 @@ enum English {
 
         // Settings and preferences
         "Système": "System",
-        "Activé": "On",
         "Automatique": "Automatic",
-        "Désactivé": "Off",
         "En attente de votre accord dans Réglages Système.": "Waiting for your approval in System Settings.",
         "Ce fichier n'est pas une clé OAuth de Google Cloud.": "This file is not a Google Cloud OAuth key.",
         "L'ID client se termine par .apps.googleusercontent.com.": "The client ID ends with .apps.googleusercontent.com.",
@@ -170,6 +173,26 @@ enum English {
             "Christmas theme, from December 1 to January 6 or on demand in Settings",
         "Vos stockages en ligne montés comme des disques dans le Finder, avec macFUSE ou le client NFS intégré à macOS":
             "Your cloud storage mounted as disks in the Finder, with macFUSE or the NFS client built into macOS",
+        // 0.1.1
+        "Lecteurs rangés par glisser-déposer, dans des groupes repliables à activer dans Paramètres":
+            "Drives arranged by drag and drop, in collapsible groups turned on in Settings",
+        "Groupes gardés quand l'option est désactivée, retrouvés tels quels en la réactivant":
+            "Groups kept while the option is off, and back as they were when it is turned on again",
+        "Cache sur un disque externe : les lecteurs attendent qu'il soit branché, puis se montent d'eux-mêmes":
+            "Cache on an external disk: drives wait for it to be connected, then mount on their own",
+        "Réglage Thème : Automatique, Standard ou Noël": "Theme setting: Automatic, Standard or Christmas",
+        "Espace en ligne compté comme les services : un forfait Dropbox de 10 To affiche 10,00 To, et non plus 11,00 To":
+            "Online space counted as the services count it: a 10 TB Dropbox plan shows 10.00 TB, no longer 11.00 TB",
+        "Cartes de lecteurs plus espacées, et le thème de Noël ne décale plus aucune page":
+            "Drive cards spaced a little more, and the Christmas theme no longer shifts any page",
+        "Bonnet de Noël posé sur le dessus du logo": "Christmas hat worn on top of the logo",
+        "Se connecter à un service fonctionne de nouveau après avoir fermé la page du navigateur":
+            "Signing in to a service works again after closing the browser page",
+        "Quitter Docklume pendant une connexion ou un test de débit ne laisse plus rclone tourner en arrière-plan":
+            "Quitting Docklume during a sign-in or a speed test no longer leaves rclone running in the background",
+        "« Vider tout le cache » ne touche plus qu'aux caches des lecteurs, même dans un dossier partagé":
+            "“Clear Whole Cache” only touches the drives' caches, even in a shared folder",
+        "Champ de renommage lisible quand le nom est sélectionné": "Rename field readable when the name is selected",
 
         // Controls
         "Fermer": "Close",
@@ -223,6 +246,7 @@ enum English {
         "Tester la connexion": "Test Connection",
         "Utiliser ma propre clé Google": "Use my own Google key",
         "Votre navigateur s'ouvre pour autoriser Docklume.": "Your browser opens to authorize Docklume.",
+        "Page fermée ? Cliquez de nouveau pour la rouvrir.": "Closed the page? Click again to open it again.",
 
         // Dialogs
         "Ajoutées à la commande de montage, après celles du profil.": "Added to the mount command, after the profile's.",
@@ -288,6 +312,21 @@ enum English {
         "Contenu de « %@ » actualisé": "Contents of “%@” refreshed",
         "Copier le chemin": "Copy Path",
         "Dupliquer": "Duplicate",
+        "Groupe": "Group",
+        "Sans groupe": "No Group",
+        "Nouveau groupe…": "New Group…",
+        "Déplier": "Expand",
+        "Replier": "Collapse",
+        "Supprimer le groupe…": "Delete Group…",
+        "Supprimer le groupe « %@ » ?": "Delete the group “%@”?",
+        "Ses lecteurs restent dans Docklume, sans groupe. Rien n'est démonté.":
+            "Its drives stay in Docklume, without a group. Nothing is unmounted.",
+        "Actions pour le groupe %@": "Actions for the group %@",
+        "Nouveau nom du groupe %@": "New name for the group %@",
+        "Glissez un lecteur ici.": "Drag a drive here.",
+        "Grouper les lecteurs": "Group Drives",
+        "Sections repliables sur la page des lecteurs.": "Collapsible sections on the drives page.",
+        "Les groupes créés sont gardés pour plus tard.": "The groups you made are kept for later.",
         "Démonter": "Unmount",
         "Démonter « %@ » ?": "Unmount “%@”?",
         "Les fichiers lus seront retéléchargés à la prochaine lecture. Ceux qui n'ont pas encore été envoyés sont conservés.%@":
@@ -459,7 +498,8 @@ enum English {
         "Configuration": "Configuration",
         "Docklume lecteurs.json": "Docklume drives.json",
         "Docklume y reste quand la fenêtre est fermée.": "Docklume stays there when the window is closed.",
-        "Du 1er décembre au 6 janvier.": "From December 1 to January 6.",
+        "Branchez le disque « %@ » d'abord : le cache actuel s'y trouve, avec les fichiers pas encore envoyés.":
+            "Connect the disk “%@” first: the current cache is on it, with the files not uploaded yet.",
         "Emplacement du cache modifié": "Cache location changed",
         "Emplacement du cache modifié, lecteurs remontés": "Cache location changed, drives remounted",
         "Espace presque plein": "Nearly full",
@@ -494,7 +534,12 @@ enum English {
         "Quand un service demande de se reconnecter.": "When a service asks you to sign in again.",
         "Rechercher une mise à jour": "Check for Update",
         "Session expirée": "Session expired",
-        "Thème de Noël": "Christmas theme",
+        "Thème": "Theme",
+        "Standard": "Standard",
+        "Noël": "Christmas",
+        "Noël du 1er décembre au 6 janvier, standard le reste de l'année.": "Christmas from December 1 to January 6, standard the rest of the year.",
+        "Sans décor, toute l'année.": "No decoration, all year round.",
+        "Ciel d'hiver, neige et bonnet, toute l'année.": "Winter sky, snow and hat, all year round.",
         "Tous les remotes de %@ sont des lecteurs.": "Every remote in %@ is a drive.",
         "Vider tout le cache ?": "Clear the whole cache?",
         "Vider tout le cache…": "Clear Whole Cache…",

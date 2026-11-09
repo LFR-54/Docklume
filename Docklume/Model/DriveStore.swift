@@ -5,6 +5,7 @@ import UserNotifications
 @MainActor @Observable
 final class DriveStore {
     private(set) var drives: [Drive] = []
+    private(set) var groups: [DriveGroup] = []
     private(set) var engineVersion: String?
 
     /// The rclone release, without the suffix of the build bundled with Docklume.
@@ -31,6 +32,9 @@ final class DriveStore {
     /// When the Finder announced the eject of a drive's volume.
     @ObservationIgnored private var ejections: [Drive.ID: ContinuousClock.Instant] = [:]
     @ObservationIgnored private var ejectObserver: NSObjectProtocol?
+    @ObservationIgnored private var diskObserver: NSObjectProtocol?
+    /// The drives waiting for the external disk that holds the caches.
+    @ObservationIgnored private var waitingForDisk: Set<Drive.ID> = []
     @ObservationIgnored private var refreshingSpace = false
     @ObservationIgnored private var tagSignature: String?
     @ObservationIgnored private var syncingTags = false
@@ -44,11 +48,12 @@ final class DriveStore {
         self.catalog = catalog
     }
 
-    /// A store showing given drives without rclone, for screenshots.
-    init(showing drives: [Drive], preferences: Preferences, engineVersion: String) {
+    /// A store showing given drives without rclone, for screenshots and tests.
+    init(showing drives: [Drive], groups: [DriveGroup] = [], preferences: Preferences, engineVersion: String) {
         self.preferences = preferences
         self.catalog = nil
         self.drives = drives
+        self.groups = groups
         self.engineVersion = engineVersion
     }
 
@@ -56,6 +61,9 @@ final class DriveStore {
     var totalRead: Double { drives.reduce(0) { $0 + $1.readSpeed } }
     var totalWrite: Double { drives.reduce(0) { $0 + $1.writeSpeed } }
     var hasActiveMounts: Bool { !sessions.isEmpty }
+
+    /// The external disk holding the caches, by its name, when it is not connected.
+    var missingCacheDisk: String? { Mounts.missingVolume(for: preferences.cacheBase) }
     var pendingUploadCount: Int { drives.reduce(0) { $0 + $1.pendingUploads } }
 
     /// What happens to files still being uploaded when the drives are unmounted.
@@ -97,6 +105,7 @@ final class DriveStore {
             engineVersion = try await rclone.version()
             configPath = try? await rclone.configFile()
             remotes = try await rclone.remotes()
+            groups = readGroups()
             if let saved = readCatalog() {
                 drives = saved.map(Drive.init)
             } else {
@@ -164,6 +173,21 @@ final class DriveStore {
         try? encoder.encode(drives.map(\.record)).write(to: catalog, options: .atomic)
     }
 
+    private var groupsFile: URL? { catalog?.deletingLastPathComponent().appending(path: "groups.json") }
+
+    private func readGroups() -> [DriveGroup] {
+        guard let groupsFile, let data = try? Data(contentsOf: groupsFile) else { return [] }
+        return (try? JSONDecoder().decode([DriveGroup].self, from: data)) ?? []
+    }
+
+    private func saveGroups() {
+        guard let groupsFile else { return }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try? FileManager.default.createDirectory(at: groupsFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? encoder.encode(groups).write(to: groupsFile, options: .atomic)
+    }
+
     private func refreshSpace() async {
         guard let rclone, !refreshingSpace else { return }
         refreshingSpace = true
@@ -224,6 +248,14 @@ final class DriveStore {
         guard rclone != nil, sessions[drive.id] == nil, !checkingServer.contains(drive.id) else { return }
         guard drive.settings.method.isAvailable else {
             drive.state = .failed(L("macFUSE n'est pas installé. Choisissez NFS intégré dans la fiche du lecteur."))
+            return
+        }
+        // rclone cannot start without its cache, and an external disk can come after Docklume, at login: the drive
+        // mounts once the disk is there.
+        if let disk = missingCacheDisk {
+            drive.state = .mounting
+            drive.notice = L("En attente du disque « \(disk) », qui garde le cache.")
+            waitingForDisk.insert(drive.id)
             return
         }
         // Mounting over another volume would hide it, and its rclone may be using the same cache.
@@ -309,9 +341,15 @@ final class DriveStore {
         }
     }
 
-    /// The Finder and Disk Utility announce an eject; the unmounts of Docklume do not.
+    /// The Finder and Disk Utility announce an eject; the unmounts of Docklume do not. A disk that arrives may be the
+    /// one holding the caches.
     private func watchEjections() {
         guard ejectObserver == nil else { return }
+        diskObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didMountNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.diskMounted() }
+        }
         ejectObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.willUnmountNotification, object: nil, queue: .main
         ) { [weak self] notification in
@@ -325,9 +363,20 @@ final class DriveStore {
         }
     }
 
+    /// The drives waiting for the disk of the caches mount once it is there.
+    private func diskMounted() {
+        guard !waitingForDisk.isEmpty, missingCacheDisk == nil else { return }
+        let waiting = waitingForDisk
+        waitingForDisk = []
+        for drive in drives where waiting.contains(drive.id) && drive.state == .mounting && sessions[drive.id] == nil {
+            mount(drive)
+        }
+    }
+
     func unmount(_ drive: Drive) {
         guard let session = sessions[drive.id] else {
-            // Waiting to mount again: stops waiting.
+            // Waiting to mount again, or for the disk of the caches: stops waiting.
+            waitingForDisk.remove(drive.id)
             if drive.state == .mounting {
                 drive.state = .unmounted
                 drive.notice = nil
@@ -573,12 +622,15 @@ final class DriveStore {
     }
 
     static func pendingMessage(_ drive: Drive, _ pending: CacheFolder.Pending) -> String {
-        L("« \(drive.name) » a encore \(Format.plural(pending.files, "fichier")) à envoyer (\(Format.capacity(pending.bytes))). ")
+        L("« \(drive.name) » a encore \(Format.plural(pending.files, "fichier")) à envoyer (\(Format.fileSize(pending.bytes))). ")
             + L("Montez-le et attendez la fin des envois avant de le supprimer.")
     }
 
     /// Refuses while files are waiting to be uploaded, since deleting the drive deletes its cache.
     func delete(_ drive: Drive) async throws {
+        if let disk = missingCacheDisk {
+            throw RcloneError.command(L("Branchez le disque « \(disk) » avant de supprimer ce lecteur : son cache peut garder des fichiers pas encore envoyés."))
+        }
         if pendingUploads(drive).files > 0 { throw RcloneError.command(Self.pendingMessage(drive, pendingUploads(drive))) }
         cancelSpeedTest(drive)
         if sessions[drive.id] != nil {
@@ -645,10 +697,13 @@ final class DriveStore {
             kept.files += pending.files
             kept.bytes += pending.bytes
         }
-        // Leftovers of drives deleted while the folder was elsewhere.
+        // Leftovers of drives deleted while the folder was elsewhere, named after their drive's ID: a cache folder
+        // chosen before Docklume kept its own, such as the root of a disk, also holds other folders.
         let known = Set(drives.map(\.id))
         let folders = (try? FileManager.default.contentsOfDirectory(at: preferences.cacheBase, includingPropertiesForKeys: nil)) ?? []
-        for folder in folders where !known.contains(folder.lastPathComponent) { CacheFolder.purge(folder) }
+        for folder in folders where !known.contains(folder.lastPathComponent) && UUID(uuidString: folder.lastPathComponent) != nil {
+            CacheFolder.purge(folder)
+        }
         return kept
     }
 
@@ -677,6 +732,104 @@ final class DriveStore {
 
     func openWeb(_ drive: Drive) {
         if let web = drive.provider.web { NSWorkspace.shared.open(web) }
+    }
+
+    // MARK: Order and groups
+
+    /// The drives in the order of the page: group after group when the groups are shown.
+    var orderedDrives: [Drive] {
+        preferences.showGroups ? sections.flatMap(\.drives) : drives
+    }
+
+    /// Each group with its drives in the list's order, then the drives without a group, or whose group is gone.
+    var sections: [DriveSection] {
+        groups.map { group in DriveSection(group: group, drives: drives.filter { $0.record.group == group.id }) }
+            + [DriveSection(group: nil, drives: drives.filter { groupID(of: $0) == nil })]
+    }
+
+    /// The drive's group, if it still exists.
+    func groupID(of drive: Drive) -> String? {
+        drive.record.group.flatMap { id in groups.contains { $0.id == id } ? id : nil }
+    }
+
+    /// Puts a drive just before or after another. With the groups shown, it joins that drive's group; hidden, it
+    /// keeps its own.
+    func move(_ drive: Drive, to target: Drive, after: Bool) {
+        guard drive !== target, drives.contains(where: { $0 === target }) else { return }
+        let group = preferences.showGroups ? groupID(of: target) : drive.record.group
+        drives.removeAll { $0 === drive }
+        let index = drives.firstIndex { $0 === target } ?? drives.count
+        drives.insert(drive, at: after ? min(index + 1, drives.count) : index)
+        drive.record.group = group
+        save()
+    }
+
+    /// Puts a drive last in a group, or among the drives without one.
+    func move(_ drive: Drive, toGroup id: String?) {
+        drives.removeAll { $0 === drive }
+        let last = drives.lastIndex { groupID(of: $0) == id }
+        drives.insert(drive, at: last.map { $0 + 1 } ?? drives.count)
+        drive.record.group = id
+        save()
+    }
+
+    func groupNameError(_ value: String, except id: String? = nil) -> String? {
+        let name = value.trimmingCharacters(in: .whitespaces)
+        if name.isEmpty { return L("Saisissez un nom.") }
+        if groups.contains(where: { $0.id != id && $0.name.lowercased() == name.lowercased() }) { return L("Un groupe porte déjà ce nom.") }
+        return nil
+    }
+
+    /// A new group, last, under a name not taken yet, with the drive given in it.
+    @discardableResult
+    func addGroup(with drive: Drive? = nil) -> DriveGroup {
+        let base = L("Nouveau groupe")
+        var name = base, number = 2
+        while groupNameError(name) != nil {
+            name = "\(base) \(number)"
+            number += 1
+        }
+        let group = DriveGroup(name: name)
+        groups.append(group)
+        saveGroups()
+        if let drive { move(drive, toGroup: group.id) }
+        return group
+    }
+
+    /// Returns the error to show, if any.
+    @discardableResult
+    func renameGroup(_ id: String, to value: String) -> String? {
+        if let error = groupNameError(value, except: id) { return error }
+        guard let index = groups.firstIndex(where: { $0.id == id }) else { return nil }
+        groups[index].name = value.trimmingCharacters(in: .whitespaces)
+        saveGroups()
+        return nil
+    }
+
+    /// The group goes; its drives stay, last among those without a group.
+    func deleteGroup(_ id: String) {
+        let members = drives.filter { $0.record.group == id }
+        drives.removeAll { $0.record.group == id }
+        for drive in members { drive.record.group = nil }
+        drives.append(contentsOf: members)
+        groups.removeAll { $0.id == id }
+        save()
+        saveGroups()
+    }
+
+    func setCollapsed(_ id: String, _ collapsed: Bool) {
+        guard let index = groups.firstIndex(where: { $0.id == id }), groups[index].collapsed != collapsed else { return }
+        groups[index].collapsed = collapsed
+        saveGroups()
+    }
+
+    /// Puts a group just before or after another.
+    func moveGroup(_ id: String, to target: String, after: Bool) {
+        guard id != target, let group = groups.first(where: { $0.id == id }), groups.contains(where: { $0.id == target }) else { return }
+        groups.removeAll { $0.id == id }
+        let index = groups.firstIndex { $0.id == target } ?? groups.count
+        groups.insert(group, at: after ? min(index + 1, groups.count) : index)
+        saveGroups()
     }
 
     // MARK: Speed test
@@ -965,7 +1118,7 @@ final class DriveStore {
     /// When the disk gets close to full, the drive with the most cache to free is remounted with only its files
     /// still waiting to be uploaded, which nothing may delete.
     private func protectDisk() async {
-        guard let free = DiskSpace.available(at: FileManager.default.homeDirectoryForCurrentUser), free < DiskSpace.floor else { return }
+        guard let free = DiskSpace.available(at: preferences.cacheBase), free < DiskSpace.floor else { return }
         // A drive with files waiting is left alone: remounting it would break the copy writing them, and rclone
         // removes what it has sent itself, holding writes until there is room. rclone marks a file as waiting from
         // its first write, before it counts it as an upload.
@@ -981,7 +1134,7 @@ final class DriveStore {
         guard let (drive, freeable) = candidates.max(by: { $0.freeable < $1.freeable }), freeable >= 1_000_000_000 else {
             if !warnedDiskFull, waiting {
                 warnedDiskFull = true
-                notify(L("Le disque est presque plein"), L("Des fichiers attendent d'être envoyés et ne peuvent pas être retirés du cache. Libérez de la place sur ce Mac."))
+                notify(L("Le disque est presque plein"), L("Des fichiers attendent d'être envoyés et ne peuvent pas être retirés du cache. Libérez de la place sur le disque du cache."))
             }
             return
         }

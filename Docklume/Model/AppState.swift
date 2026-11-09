@@ -39,7 +39,10 @@ final class AppState {
     }
 
     var page = Page.drives {
-        didSet { renaming = nil }
+        didSet {
+            renaming = nil
+            renamingGroup = nil
+        }
     }
     var overlay: Overlay?
     /// Set once the user has agreed to quit with uploads in progress, so ⌘Q does not ask again.
@@ -48,6 +51,25 @@ final class AppState {
     var query = ""
     /// The drive whose name is being edited in the list.
     var renaming: String?
+    /// The group whose name is being edited in the list.
+    var renamingGroup: String?
+    /// What is being dragged on the drives page, and where it would land.
+    var dragging: DragItem?
+    var dropSpot: DropSpot?
+
+    enum DragItem: Equatable {
+        case drive(String)
+        case group(String)
+    }
+
+    enum DropSpot: Equatable {
+        /// A line above or below a drive card.
+        case drive(String, after: Bool)
+        /// Into a group, its header lit; nil for the drives without a group.
+        case group(String?)
+        /// A line above or below a group's header, for a group being moved.
+        case groupEdge(String, after: Bool)
+    }
     /// Bumped to put the focus in the name field of the drive page.
     var nameFieldRequest = 0
 

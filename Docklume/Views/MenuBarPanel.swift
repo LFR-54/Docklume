@@ -100,7 +100,7 @@ struct MenuBarPanel: View {
         let height = CGFloat(store.drives.count) * rowHeight
         return ScrollView {
             VStack(spacing: 0) {
-                ForEach(store.drives) { drive in
+                ForEach(store.orderedDrives) { drive in
                     PanelDriveRow(drive: drive) {
                         if drive.isMounted {
                             store.showInFinder(drive)

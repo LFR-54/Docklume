@@ -129,6 +129,7 @@ struct DriveMenuItems: View {
         Button(L("Renommer"), systemImage: "character.cursor.ibeam") { actions.run(.rename, drive) }
         Button(L("Modifier la connexion…"), systemImage: "pencil") { actions.run(.edit, drive) }
         Button(L("Dupliquer"), systemImage: "plus.square.on.square") { actions.run(.duplicate, drive) }
+        if actions.store.preferences.showGroups { DriveGroupMenu(drive: drive, actions: actions) }
         Divider()
         Button(L("Tester le débit"), systemImage: "gauge.with.dots.needle.67percent") { actions.run(.test, drive) }
         Button(L("Vider le cache…"), systemImage: "eraser") { actions.run(.cache, drive) }

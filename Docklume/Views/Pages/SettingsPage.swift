@@ -25,8 +25,13 @@ struct SettingsPage: View {
                     SettingsRow(L("Afficher le débit dans la barre des menus"), hint: nil as String?) {
                         SwitchToggle(isOn: $preferences.showSpeedInMenuBar, label: L("Afficher le débit"))
                     }
-                    SettingsRow(L("Thème de Noël"), hint: preferences.christmas == .automatic ? L("Du 1er décembre au 6 janvier.") : nil) {
-                        PopupButton(selection: $preferences.christmas, options: ChristmasTheme.allCases, title: \.title)
+                    SettingsRow(L("Grouper les lecteurs"),
+                                hint: preferences.showGroups ? L("Sections repliables sur la page des lecteurs.") : L("Les groupes créés sont gardés pour plus tard.")) {
+                        SwitchToggle(isOn: $preferences.showGroups, label: L("Grouper les lecteurs"))
+                    }
+                    // A hint for every choice, so that the row keeps its height and the page does not jump.
+                    SettingsRow(L("Thème"), hint: preferences.theme.hint) {
+                        PopupButton(selection: $preferences.theme, options: AppTheme.allCases, title: \.title)
                     }
                 }
                 SectionTitle(text: L("Notifications"))
@@ -106,10 +111,15 @@ struct SettingsPage: View {
         panel.canCreateDirectories = true
         panel.prompt = L("Choisir")
         panel.message = L("Les caches y sont déplacés, avec les fichiers pas encore envoyés. Les lecteurs montés sont remontés.")
+        // The files not uploaded yet are on the current cache's disk.
+        if let disk = store.missingCacheDisk {
+            app.show(L("Branchez le disque « \(disk) » d'abord : le cache actuel s'y trouve, avec les fichiers pas encore envoyés."), warning: true)
+            return
+        }
         guard panel.runModal() == .OK, let folder = panel.url else { return }
         let remounts = store.hasActiveMounts
         Task {
-            await store.moveCaches(to: folder)
+            await store.moveCaches(to: MountOptions.cacheBase(in: folder))
             app.show(remounts ? L("Emplacement du cache modifié, lecteurs remontés") : L("Emplacement du cache modifié"))
         }
     }

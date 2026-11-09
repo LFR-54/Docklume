@@ -22,6 +22,10 @@ struct DocklumeApp: App {
                 Button(L("Ajouter un lecteur…")) { delegate.app.overlay = .add(provider: "webdav") }
                     .keyboardShortcut("n")
             }
+            CommandGroup(before: .toolbar) {
+                Toggle(L("Grouper les lecteurs"), isOn: Bindable(delegate.store.preferences).showGroups)
+                Divider()
+            }
             CommandGroup(replacing: .help) {
                 Button(L("Notes de version")) { delegate.app.overlay = .notes }
             }
@@ -160,6 +164,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             sender.reply(toApplicationShouldTerminate: true)
         }
         return .terminateLater
+    }
+
+    /// A sign-in, a speed test or a space reading still running would outlive Docklume.
+    func applicationWillTerminate(_ notification: Notification) {
+        ChildProcesses.shared.terminateAll()
     }
 }
 

@@ -230,6 +230,16 @@ enum Mounts {
         }
     }
 
+    /// The name of the disk under /Volumes that `url` lies on, when that disk is not connected; nil on the startup
+    /// disk. /Volumes/Macintosh HD is a link to /, not a mount point.
+    static func missingVolume(for url: URL) -> String? {
+        let components = url.standardizedFileURL.pathComponents
+        guard components.count > 2, components[1] == "Volumes" else { return nil }
+        let volume = URL(filePath: "/Volumes", directoryHint: .isDirectory).appending(path: components[2], directoryHint: .isDirectory)
+        if isMounted(volume) || (try? FileManager.default.destinationOfSymbolicLink(atPath: volume.path)) != nil { return nil }
+        return components[2]
+    }
+
     /// Whether two paths name the same mount point. The mount table keeps the on-disk case (~/cloud for ~/Cloud) and
     /// resolved symbolic links (/private/tmp for /tmp); links are resolved in the parent folder only, as the volume
     /// itself may not answer.

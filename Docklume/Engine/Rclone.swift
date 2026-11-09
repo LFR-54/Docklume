@@ -103,7 +103,7 @@ struct Rclone: Sendable {
                     process.standardOutput = output
                     process.standardError = errors
                     do {
-                        try process.run()
+                        try ChildProcesses.shared.run(process)
                     } catch {
                         continuation.resume(throwing: error)
                         return
@@ -145,7 +145,7 @@ struct Rclone: Sendable {
                     process.standardOutput = output
                     process.standardError = FileHandle.nullDevice
                     do {
-                        try process.run()
+                        try ChildProcesses.shared.run(process)
                     } catch {
                         continuation.resume(throwing: error)
                         return
@@ -171,6 +171,32 @@ struct Rclone: Sendable {
 /// Standard error, read on its own thread; read back only after that thread is done.
 private final class ErrorOutput: @unchecked Sendable {
     var data = Data()
+}
+
+/// The one-shot processes still running, which Docklume ends as it quits: they would outlive it, and an
+/// `rclone authorize` left waiting keeps the sign-in port, 127.0.0.1:53682, so every later sign-in fails.
+/// The mounts are not among them; `DriveStore.unmountAll` stops those.
+final class ChildProcesses: @unchecked Sendable {
+    static let shared = ChildProcesses()
+
+    private let lock = NSLock()
+    private var running: [ObjectIdentifier: Process] = [:]
+
+    func run(_ process: Process) throws {
+        let id = ObjectIdentifier(process)
+        lock.withLock { running[id] = process }
+        process.terminationHandler = { [self] _ in lock.withLock { running[id] = nil } }
+        do {
+            try process.run()
+        } catch {
+            lock.withLock { running[id] = nil }
+            throw error
+        }
+    }
+
+    func terminateAll() {
+        for process in lock.withLock({ Array(running.values) }) where process.isRunning { process.terminate() }
+    }
 }
 
 /// Lets a cancellation handler end a process started on another thread.

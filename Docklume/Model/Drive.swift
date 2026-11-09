@@ -83,6 +83,23 @@ struct DriveRecord: Codable, Identifiable, Equatable {
     /// Remotes written to rclone.conf by Docklume, removed with the drive.
     var createdRemotes: [String] = []
     var settings = DriveSettings()
+    /// The ID of the drive's group, kept while groups are turned off.
+    var group: String?
+}
+
+/// A named section of the drives page. The groups and their order are kept in groups.json, next to drives.json.
+struct DriveGroup: Codable, Identifiable, Equatable {
+    var id = UUID().uuidString
+    var name: String
+    var collapsed = false
+}
+
+/// A run of drives under its group's header; the drives without a group come last, under none.
+struct DriveSection: Identifiable {
+    let group: DriveGroup?
+    let drives: [Drive]
+
+    var id: String { group?.id ?? "" }
 }
 
 struct Upload: Identifiable, Equatable {
@@ -187,6 +204,15 @@ final class Drive: Identifiable {
 enum MountOptions {
     static let defaultCacheBase = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         .appending(path: "Docklume", directoryHint: .isDirectory)
+
+    /// The caches in a folder the user chose go into a folder of their own, so that emptying them never touches
+    /// what else the chosen folder holds. Spotlight skips a folder named .noindex: it indexes an external disk, and
+    /// the cached files would show in searches next to those of the drive. ~/Library/Caches is never indexed.
+    static func cacheBase(in folder: URL) -> URL {
+        let folder = folder.standardizedFileURL
+        if folder.pathExtension == "noindex" || folder.path == defaultCacheBase.standardizedFileURL.path { return folder }
+        return folder.appending(path: "Docklume.noindex", directoryHint: .isDirectory)
+    }
 
     /// Each drive has its own cache folder, so two drives on one remote never share it.
     @MainActor

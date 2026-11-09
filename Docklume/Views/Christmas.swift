@@ -9,8 +9,12 @@ import SwiftUI
 enum Christmas {
     /// The scrolling content of a page, where a card's place gives its snow a shape of its own.
     static let pageSpace = "christmas.page"
-    /// The snow on each drive card, at its thickest: it leaves at least 8 pt below the card above.
+    /// The snow on each drive card, at its thickest: it leaves 14 pt below the card above, the space between cards
+    /// without the theme.
     static let driveSnow: CGFloat = 10
+    /// Above the first surface of a page, the snow at its thickest and 2 pt: taken from the header's 14 pt bottom
+    /// margin, so that the page does not move down with the theme.
+    static let pageSnowRoom: CGFloat = 12
 }
 
 /// Behind the content: the winter sky.
@@ -169,7 +173,7 @@ private extension Path {
     }
 }
 
-/// A Santa hat for the top left corner of the logo.
+/// A Santa hat for the logo, its tip falling to the right.
 struct SantaHat: View {
     var body: some View {
         Canvas { context, size in

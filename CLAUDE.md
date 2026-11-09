@@ -70,6 +70,11 @@ encore faites.
   `finderMeta`), `~/Library/Logs/Docklume/<id>.log`. Montages dans `~/Cloud/<nom>`. Au premier lancement, les remotes
   de `rclone.conf` sont importés en lecture seule ; ceux créés par l'app y sont écrits et supprimés avec leur dernier
   lecteur.
+- Ordre et groupes : l'ordre de `drives.json` est celui de la page, changé par glisser-déposer des cartes. Les groupes
+  (nom, ordre, replié) sont dans `groups.json` à côté, et chaque lecteur garde l'ID du sien (`DriveRecord.group`).
+  Le réglage `showGroups` (Paramètres, menu Présentation) ne fait que les afficher ou non : désactivé, rien ne se
+  perd, et un lecteur glissé garde son groupe. Le panneau et Activité suivent l'ordre de la page (`orderedDrives`).
+  `tools/tests/run.sh` vérifie ces déplacements (test `groups`).
 
 ## Langues
 
@@ -80,8 +85,10 @@ encore faites.
   aussitôt (`.id` sur la langue), sans relance ni démontage. Il est aussi écrit en `AppleLanguages` de l'app, pour
   les menus de macOS au lancement suivant ; Système le retire.
 - Pas d'accord par interpolation (`\(n > 1 ? "s" : "")`) : une phrase au singulier et une au pluriel, ou
-  `Format.plural`. Les valeurs enregistrées (`Profile`, `MountMethod`, `ChristmasTheme`) gardent leur `rawValue`
+  `Format.plural`. Les valeurs enregistrées (`Profile`, `MountMethod`, `AppTheme`) gardent leur `rawValue`
   français et s'affichent par `title`. Unités : Mo/Go/To en français, MB/GB/TB en anglais (`Format.unit`).
+  L'espace du cloud se compte en puissances de 1024 comme les services (`Format.capacity` : Dropbox 10 To =
+  10 × 1024⁴ octets), les fichiers du Mac en puissances de 1000 comme le Finder (`Format.fileSize`, `Format.gigabytes`).
 - Après un texte ajouté ou changé : `python3 -I tools/l10n/check.py` liste les textes sans anglais, les entrées en
   double (plantage au lancement) et les valeurs qui ne correspondent pas.
 - GitHub : `README.md` en anglais, `README.fr.md` en français ; site en anglais dans `docs/`, en français dans
@@ -113,6 +120,11 @@ remesurer. L'essentiel :
 - Envois : Dropbox en blocs de 128M sur 16 transferts, Google Drive en 64M sur 8.
 - rclone ne libère pas un fichier en cours de lecture en NFS : sous 3 Go libres (`DiskSpace.floor`), l'app remonte le
   lecteur avec un cache vidé, sauf si des envois sont en attente ou des fichiers modifiés attendent sur le disque.
+  L'espace libre lu est celui du disque du cache.
+- Cache sur un disque externe (Paramètres › Cache › Emplacement) : il va dans `<dossier choisi>/Docklume.noindex`,
+  pour que « Vider tout le cache » ne touche rien d'autre et que Spotlight ne l'indexe pas (il indexe les disques
+  externes, pas `~/Library/Caches`). Disque absent : les lecteurs l'attendent (« En attente du disque… ») et se
+  montent à son arrivée ; supprimer un lecteur ou déplacer le cache est refusé tant qu'il manque.
 - La clé Google partagée de rclone est limitée et en fin de vie : l'app accepte une clé Google personnelle
   (`GoogleKeyDialog`).
 
@@ -132,14 +144,18 @@ remesurer. L'essentiel :
 
 ## Thème de Noël
 
-- Réglage `christmas` des Paramètres : Automatique (du 1er décembre au 6 janvier), Activé, Désactivé.
+- Réglage Thème des Paramètres (`theme`) : Automatique (Noël du 1er décembre au 6 janvier), Standard, Noël ; prêt
+  pour d'autres thèmes (`AppTheme`). L'ancien réglage `christmas` (Activé, Désactivé) est repris au lancement.
 - Contenu : ciel d'hiver derrière la fenêtre, neige posée en haut de chaque carte de lecteur, de la barre latérale,
   des surfaces du haut d'une page et de la carte du panneau, bonnet sur le logo. Tout est statique.
 - La neige (`snowCap`) est Equatable, donc une carte redessinée chaque seconde pour son débit ne la redessine pas ;
   elle reste figée pendant le redimensionnement (`liveResize`, signalé par `WindowChrome`) et se refait à la fin.
-- Sa bosse la plus haute vaut exactement `depth` (10 pt sur une carte de lecteur, 8 pt d'air sous la carte du
-  dessus), elle suit l'arrondi des coins et s'y amincit jusqu'à rien, et son contour est lissé : un trait clair au
+- Sa bosse la plus haute vaut exactement `depth` (10 pt sur une carte de lecteur, puis 14 pt d'air sous la carte du
+  dessus, l'écart entre les cartes sans le thème), elle suit l'arrondi des coins et s'y amincit jusqu'à rien, et son contour est lissé : un trait clair au
   bout de la neige et des marches sur le contour se voyaient à 1x sur fond sombre.
+- Le thème ne déplace rien : la place de la neige au-dessus de la première carte d'une page (`pageSnowRoom`) est
+  prise sur la marge basse de l'en-tête. Le bonnet est posé sur le dessus du logo, pompon à droite, sous les
+  boutons de la fenêtre ; au coin gauche il frôlait ces boutons, au coin droit il touchait le titre.
 - Essayé puis refusé par l'utilisateur, à ne pas reproposer : neige qui tombe, guirlandes (ampoules, sapin, perles,
   décorations suspendues), sapin décoré, houx, congère ou neige en bas de la fenêtre, flocons immobiles dans le fond,
   gouttes sous la neige.
@@ -151,6 +167,8 @@ remesurer. L'essentiel :
 - Arrêt macFUSE : `/sbin/umount`, puis `umount -f`, SIGINT en dernier recours (SIGINT seul laissait rclone bloqué
   10 à 15 min). NFS : SIGINT. Un point de montage resté occupé se règle par rmdir puis mkdir.
 - Une éjection depuis le Finder fait sortir rclone avec le code 0 : pas de remontage automatique.
+- Un process lancé par l'app lui survit quand elle quitte. Les rclone ponctuels passent par `ChildProcesses`, arrêtés
+  à la sortie : un `rclone authorize` resté en attente gardait le port 53682 et faisait échouer les connexions suivantes.
 - Au lancement, l'app reprend les rclone orphelins (ppid 1) dont `--cache-dir` correspond à un lecteur.
 - NFS : `--option locallocks` est obligatoire (le serveur rclone n'a pas de NLM). NFS ne garde pas les tags.
 - Spotlight n'indexe pas macFUSE, donc la liste Tags du Finder ne montre rien : l'app tient `~/Cloud/Tags/<tag>/`,

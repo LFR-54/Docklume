@@ -81,6 +81,19 @@ extension View {
             .padding(.vertical, max(0, (lineHeight - 1.193) * size / 2))
     }
 
+    /// The face of a name edited in place: opaque, so that the selected text stands out from the field, with the
+    /// focus ring around it rather than under it.
+    func inlineNameField(invalid: Bool = false) -> some View {
+        background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .hairlineBorder(RoundedRectangle(cornerRadius: 6, style: .continuous), invalid ? Theme.red : Theme.accent)
+            .overlay {
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .strokeBorder(invalid ? Theme.redSoft : Theme.accentSoft, lineWidth: 3)
+                    .padding(-3)
+                    .allowsHitTesting(false)
+            }
+    }
+
     /// A one-pixel border, sharp on any screen.
     func hairlineBorder<S: InsettableShape, Style: ShapeStyle>(_ shape: S, _ style: Style) -> some View {
         modifier(HairlineBorder(shape: shape, style: style))

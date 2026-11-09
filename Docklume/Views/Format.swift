@@ -14,12 +14,18 @@ enum Format {
         return "\(Int((bytesPerSecond / 1_000).rounded())) \(unit("Ko/s"))"
     }
 
-    /// Drive capacities: "1,31 To", "620 Go", "85 Mo".
-    static func capacity(_ bytes: Int64) -> String {
-        let value = Double(bytes)
-        if value >= 1e12 { return "\(decimal(value / 1e12, 2)) \(unit("To"))" }
-        if value >= 1e9 { return "\(Int((value / 1e9).rounded())) \(unit("Go"))" }
-        return "\(Int((value / 1e6).rounded())) \(unit("Mo"))"
+    /// Space in the cloud, in powers of 1024 as the services count it: Dropbox's 10 To plan, 10 × 1024⁴ bytes,
+    /// reads "10,00 To" here and on its site, where the Finder shows 11 To.
+    static func capacity(_ bytes: Int64) -> String { scaled(Double(bytes), base: 1024) }
+
+    /// Files on this Mac, in powers of 1000 as the Finder counts them: "1,31 To", "620 Go", "85 Mo".
+    static func fileSize(_ bytes: Int64) -> String { scaled(Double(bytes), base: 1000) }
+
+    private static func scaled(_ value: Double, base: Double) -> String {
+        let mega = base * base, giga = mega * base, tera = giga * base
+        if value >= tera { return "\(decimal(value / tera, 2)) \(unit("To"))" }
+        if value >= giga { return "\(Int((value / giga).rounded())) \(unit("Go"))" }
+        return "\(Int((value / mega).rounded())) \(unit("Mo"))"
     }
 
     /// Cache sizes: "48 Go", "1,4 Go".
