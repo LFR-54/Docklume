@@ -112,7 +112,7 @@ Vous utilisez déjà rclone ? Les remotes de votre `rclone.conf`, de n'importe q
 
 ## Installer
 
-1. Téléchargez `Docklume-0.1.1.zip` depuis la [dernière version](https://github.com/LFR-54/Docklume/releases/latest), ouvrez-le et glissez Docklume dans Applications.
+1. Téléchargez `Docklume-0.1.2.zip` depuis la [dernière version](https://github.com/LFR-54/Docklume/releases/latest), ouvrez-le et glissez Docklume dans Applications.
 2. Au premier lancement, macOS bloque l'app, qui n'est pas encore notariée par Apple. Ouvrez **Réglages Système › Confidentialité et sécurité**, puis cliquez sur **Ouvrir quand même**.
 
 ## Premiers pas

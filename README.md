@@ -111,7 +111,7 @@ Already using rclone? The remotes in your `rclone.conf`, of any type, are picked
 
 ## Install
 
-1. Download `Docklume-0.1.1.zip` from the [latest release](https://github.com/LFR-54/Docklume/releases/latest), open it and drag Docklume to Applications.
+1. Download `Docklume-0.1.2.zip` from the [latest release](https://github.com/LFR-54/Docklume/releases/latest), open it and drag Docklume to Applications.
 2. On first launch, macOS blocks the app, which is not notarized by Apple yet. Open **System Settings › Privacy & Security**, then click **Open Anyway**.
 
 ## Getting started

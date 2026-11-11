@@ -173,6 +173,15 @@ enum English {
             "Christmas theme, from December 1 to January 6 or on demand in Settings",
         "Vos stockages en ligne montés comme des disques dans le Finder, avec macFUSE ou le client NFS intégré à macOS":
             "Your cloud storage mounted as disks in the Finder, with macFUSE or the NFS client built into macOS",
+        // 0.1.2
+        "Espace des lecteurs montés relu toutes les 30 s et dès la fin des envois":
+            "Space of mounted drives read every 30 s and as soon as uploads finish",
+        "Petites capacités affichées avec leurs décimales : 1,48 Go au lieu de 1 Go":
+            "Small capacities shown with their decimals: 1.48 GB instead of 1 GB",
+        "Proton Drive : un envoi interrompu par le service ne bloque plus les essais suivants":
+            "Proton Drive: an upload interrupted by the service no longer blocks the next attempts",
+        "Proton Drive : les fichiers ajoutés depuis un autre appareil apparaissent sur le lecteur":
+            "Proton Drive: files added from another device show up on the drive",
         // 0.1.1
         "Lecteurs rangés par glisser-déposer, dans des groupes repliables à activer dans Paramètres":
             "Drives arranged by drag and drop, in collapsible groups turned on in Settings",

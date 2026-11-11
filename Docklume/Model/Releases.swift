@@ -39,7 +39,17 @@ struct Release: Identifiable {
 
     /// Built when asked for, in the app's language.
     static var all: [Release] { [
-        Release(version: "0.1.1", day: day(2026, 11, 9), latest: true, engine: "rclone 1.75.2", notes: [
+        Release(version: "0.1.2", day: day(2026, 11, 11), latest: true, engine: "rclone 1.75.2", notes: [
+            .improved: [
+                Note(text: L("Espace des lecteurs montés relu toutes les 30 s et dès la fin des envois")),
+                Note(text: L("Petites capacités affichées avec leurs décimales : 1,48 Go au lieu de 1 Go"))
+            ],
+            .fixed: [
+                Note(text: L("Proton Drive : un envoi interrompu par le service ne bloque plus les essais suivants")),
+                Note(text: L("Proton Drive : les fichiers ajoutés depuis un autre appareil apparaissent sur le lecteur"))
+            ]
+        ]),
+        Release(version: "0.1.1", day: day(2026, 11, 9), engine: "rclone 1.75.2", notes: [
             .new: [
                 Note(text: L("Lecteurs rangés par glisser-déposer, dans des groupes repliables à activer dans Paramètres"), bold: true),
                 Note(text: L("Groupes gardés quand l'option est désactivée, retrouvés tels quels en la réactivant")),
