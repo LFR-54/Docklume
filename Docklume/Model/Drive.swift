@@ -285,6 +285,14 @@ enum MountOptions {
         if drive.provider.type == "drive", !settings.readOnly {
             flags += ["--drive-chunk-size", "64M", "--transfers", "8"]
         }
+        // Proton Drive. rclone asks mounts to turn its link cache off: nothing updates it when files change elsewhere.
+        // An upload that fails, on a 502 from Proton's storage say, leaves a draft, and rclone then refuses every new
+        // attempt ("a draft exist"): the file never left the cache and the space never moved. Docklume is the one
+        // uploading, so it replaces its own draft.
+        if drive.provider.type == "protondrive" {
+            flags.append("--protondrive-enable-caching=false")
+            if !settings.readOnly { flags.append("--protondrive-replace-existing-draft") }
+        }
         return flags + extraOptions(settings.extraOptions)
     }
 

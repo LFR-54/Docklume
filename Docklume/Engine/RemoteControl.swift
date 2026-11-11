@@ -24,15 +24,23 @@ struct RemoteControl: Sendable {
     /// Credentials go through the environment so they never show in the process list.
     var environment: [String: String] { ["RCLONE_RC_USER": user, "RCLONE_RC_PASS": password] }
 
-    func call<Result: Decodable & Sendable>(_ method: String, _ parameters: [String: String] = [:], as type: Result.Type) async throws -> Result {
-        var request = URLRequest(url: URL(string: "http://\(address)/\(method)")!, timeoutInterval: 2)
+    /// `timeout` stays short for the calls rclone answers itself; one that asks the remote needs longer.
+    func call<Result: Decodable & Sendable>(_ method: String, _ parameters: [String: String] = [:], as type: Result.Type,
+                                            timeout: TimeInterval = 2) async throws -> Result {
+        var request = URLRequest(url: URL(string: "http://\(address)/\(method)")!, timeoutInterval: timeout)
         request.httpMethod = "POST"
         request.setValue("Basic " + Data("\(user):\(password)".utf8).base64EncodedString(), forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+        guard let status = (response as? HTTPURLResponse)?.statusCode else { throw URLError(.badServerResponse) }
+        // rclone says why in the body: {"error": "…"}.
+        guard status == 200 else { throw RcloneError.command(try? JSONDecoder().decode(Failure.self, from: data).error) }
         return try JSONDecoder().decode(Result.self, from: data)
+    }
+
+    private struct Failure: Decodable {
+        let error: String
     }
 
     func call(_ method: String, _ parameters: [String: String] = [:]) async throws {

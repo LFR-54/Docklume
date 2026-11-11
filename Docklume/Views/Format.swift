@@ -24,7 +24,10 @@ enum Format {
     private static func scaled(_ value: Double, base: Double) -> String {
         let mega = base * base, giga = mega * base, tera = giga * base
         if value >= tera { return "\(decimal(value / tera, 2)) \(unit("To"))" }
-        if value >= giga { return "\(Int((value / giga).rounded())) \(unit("Go"))" }
+        // A small plan needs the decimals: 1,48 Go free of 2 read "1 Go libres sur 2 Go", off by a third.
+        if value >= 100 * giga { return "\(Int((value / giga).rounded())) \(unit("Go"))" }
+        if value >= 10 * giga { return "\(decimal(value / giga, 1)) \(unit("Go"))" }
+        if value >= giga { return "\(decimal(value / giga, 2)) \(unit("Go"))" }
         return "\(Int((value / mega).rounded())) \(unit("Mo"))"
     }
 

@@ -101,6 +101,12 @@ final class MountSession {
         try await control.call(method, parameters)
     }
 
+    /// The space on the remote, asked of this rclone, which already holds the connection and the token: no process to
+    /// start, and no second rclone refreshing the token beside it.
+    func about(_ remote: String) async throws -> Space {
+        try await control.call("operations/about", ["fs": remote], as: Space.self, timeout: 30)
+    }
+
     /// Ends the connections that have gone quiet, so reads waiting on one lost with the network start again on a
     /// new one. Needs the bundled rclone (rclone-patches/0009).
     func reconnect() async {

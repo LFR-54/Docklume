@@ -125,6 +125,11 @@ remesurer. L'essentiel :
   pour que « Vider tout le cache » ne touche rien d'autre et que Spotlight ne l'indexe pas (il indexe les disques
   externes, pas `~/Library/Caches`). Disque absent : les lecteurs l'attendent (« En attente du disque… ») et se
   montent à son arrivée ; supprimer un lecteur ou déplacer le cache est refusé tant qu'il manque.
+- Proton Drive : `--protondrive-enable-caching=false` (rclone le demande pour un montage : son cache de liens ignore
+  les changements faits ailleurs) et `--protondrive-replace-existing-draft`. Un envoi interrompu, par un 502 du
+  stockage de Proton par exemple, laisse un brouillon, et rclone refusait ensuite chaque essai (« a draft exist ») :
+  le fichier restait dans le cache et l'espace ne bougeait pas. Reproduit en coupant un `copyto` pendant l'envoi des
+  blocs.
 - La clé Google partagée de rclone est limitée et en fin de vie : l'app accepte une clé Google personnelle
   (`GoogleKeyDialog`).
 
@@ -137,8 +142,9 @@ remesurer. L'essentiel :
 - Avant chaque montage, `DriveStore` ouvre une connexion TCP vers le serveur du lecteur (`Reachability.endpoint`,
   8 s au plus). S'il ne répond pas, rclone n'est pas lancé : « kDrive ne répond pas, nouvelle tentative dans … s »,
   puis de nouveaux essais au plus toutes les 30 s, sans limite. Une erreur réseau au montage fait de même.
-- La lecture de l'espace (`Rclone.about`, toutes les 5 min) a des délais courts ; quand le serveur est muet, la carte
-  affiche « <service> ne répond pas ».
+- Lecture de l'espace : lecteur monté, par son rclone (rc `operations/about`, sans process ni second rafraîchissement
+  du jeton) au montage, toutes les 30 s et 3 s après la fin des envois ; non monté, `Rclone.about` (délais courts)
+  toutes les 2 min. Une lecture à la fois par lecteur. Serveur muet : la carte affiche « <service> ne répond pas ».
 - `tools/outage/run.sh` simule une coupure : un relais laisse mourir les connexions ouvertes et laisse passer les
   nouvelles, comme une box après une coupure.
 

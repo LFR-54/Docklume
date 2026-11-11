@@ -36,6 +36,9 @@ final class DriveStore {
     /// The drives waiting for the external disk that holds the caches.
     @ObservationIgnored private var waitingForDisk: Set<Drive.ID> = []
     @ObservationIgnored private var refreshingSpace = false
+    @ObservationIgnored private var readingSpace: Set<Drive.ID> = []
+    /// The mounted drives with something being written or waiting to be uploaded.
+    @ObservationIgnored private var writing: Set<Drive.ID> = []
     @ObservationIgnored private var tagSignature: String?
     @ObservationIgnored private var syncingTags = false
     @ObservationIgnored private let catalog: URL?
@@ -207,10 +210,30 @@ final class DriveStore {
         }
     }
 
+    /// Through the drive's own rclone when it is mounted, with a one-shot rclone otherwise. One reading at a time per
+    /// drive: a slow server makes the next ones wait their turn rather than pile up.
     private func readSpace(_ drive: Drive) async {
-        guard let rclone else { return }
+        guard let rclone, !readingSpace.contains(drive.id) else { return }
+        readingSpace.insert(drive.id)
+        defer { readingSpace.remove(drive.id) }
+        if drive.isMounted, let session = sessions[drive.id] {
+            do {
+                return show(try await session.about(drive.remoteSpec), nil, on: drive)
+            } catch {
+                let message = error.localizedDescription
+                if message.contains("doesn't support about") { return show(Space(total: nil, used: nil, free: nil), nil, on: drive) }
+                // An rclone that does not answer, or an older one: the one-shot rclone tells what is wrong.
+            }
+        }
         let (space, error) = await Self.space(of: drive.remoteSpec, rclone)
         show(space, error, on: drive)
+    }
+
+    /// The mounted drives through their rclone, or the others, each on its own.
+    private func readSpaces(mounted: Bool) {
+        for drive in drives where drive.isMounted == mounted {
+            Task { await readSpace(drive) }
+        }
     }
 
     private func show(_ space: Space?, _ error: String?, on drive: Drive) {
@@ -435,6 +458,7 @@ final class DriveStore {
             if Mounts.isMounted(drive.mountPoint) {
                 drive.state = .mounted
                 reconnects[drive.id] = nil
+                Task { await readSpace(drive) }
                 return
             }
             if notice == nil, drive.notice == nil, ContinuousClock.now > start + .seconds(10) {
@@ -1034,8 +1058,10 @@ final class DriveStore {
                     await self?.measureCaches()
                     await self?.protectDisk()
                 }
-                // `about` can wait minutes on a slow server, which must not hold the throughput or the disk guard.
-                if tick % 300 == 299 { Task { await self?.refreshSpace() } }
+                // The space of the mounted drives every 30 s, through their rclone; the others only change from
+                // elsewhere, every 2 min. Each reading runs on its own: a slow server must not hold the throughput.
+                if tick % 30 == 29 { self?.readSpaces(mounted: true) }
+                if tick % 120 == 119 { self?.readSpaces(mounted: false) }
                 tick += 1
                 try? await Task.sleep(for: .seconds(1))
             }
@@ -1082,6 +1108,15 @@ final class DriveStore {
             } else if !drive.isMounted {
                 drive.readSpeed = 0
                 drive.writeSpeed = 0
+            }
+            // Once the uploads are done, the space is read again; the service counts them a moment later.
+            if drive.isMounted, drive.writeSpeed >= Format.idleThreshold || drive.pendingUploads > 0 {
+                writing.insert(drive.id)
+            } else if writing.remove(drive.id) != nil, drive.isMounted {
+                Task {
+                    try? await Task.sleep(for: .seconds(3))
+                    await readSpace(drive)
+                }
             }
             drive.history.append(drive.isMounted ? drive.readSpeed : 0)
             drive.history.removeFirst(max(0, drive.history.count - 60))
